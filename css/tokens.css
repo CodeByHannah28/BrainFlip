@@ -1,0 +1,49 @@
+:root {
+  /* Colours */
+  --color-brand: #c2410c;
+  --color-brand-dark: #9a3412;
+  --color-on-brand: #ffffff;
+  --color-text: #2a1a12;
+  --color-text-muted: #6b4a38;
+  --color-bg: #fff7f1;
+  --color-surface: #ffffff;
+  --color-border: #f0d3be;
+  --color-correct: #1e7f52;
+  --color-correct-bg: #e4f5ec;
+  --color-correct-text: #14532d;
+  --color-wrong: #b91c1c;
+  --color-wrong-bg: #fdecec;
+  --color-wrong-text: #8b1a1a;
+  --color-timer-bg: #fdebd3;
+  --color-timer-text: #8a4b08;
+
+  /* Fonts */
+  --font-heading: 'Sora', system-ui, sans-serif;
+  --font-body: 'DM Sans', system-ui, sans-serif;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2rem;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  /* Rounded corners and shadows */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 4px 16px rgba(42, 26, 18, 0.08);
+  --shadow-lift: 0 14px 30px rgba(42, 26, 18, 0.25);
+
+  /* Motion */
+  --duration: 0.25s;
+}

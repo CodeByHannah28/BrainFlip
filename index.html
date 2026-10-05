@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BrainFlip</title>
+    <meta name="description" content="Timed quizzes and 3D flip flashcards for exam prep." />
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200860/brain_logo_1.png"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Sora:wght@600;700&display=swap"
+    />
+    <link rel="stylesheet" href="css/tokens.css" />
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/shell.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#screen">Skip to content</a>
+
+    <header class="topbar">
+      <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+      </button>
+      <img
+        class="brand-logo"
+        src="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200860/brain_logo_1.png"
+        alt=""
+        width="32"
+        height="32"
+      />
+      <p class="brand-name">BrainFlip</p>
+    </header>
+
+    <div class="scrim" id="scrim" hidden></div>
+
+    <aside class="sidebar" id="sidebar" aria-label="Main navigation">
+      <div class="brand">
+        <img
+          class="brand-logo"
+          src="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200860/brain_logo_1.png"
+          alt=""
+          width="40"
+          height="40"
+        />
+        <div>
+          <p class="brand-name">BrainFlip</p>
+          <p class="brand-tagline">Flip it till you know it.</p>
+        </div>
+        <button class="close-btn" id="close-btn" aria-label="Close menu">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <nav aria-label="Screens">
+        <ul class="nav-list">
+          <li><a class="nav-link" href="#/home" data-route="home">Home</a></li>
+          <li><a class="nav-link" href="#/flashcards" data-route="flashcards">Flashcards</a></li>
+          <li><a class="nav-link" href="#/quiz" data-route="quiz">Quiz</a></li>
+          <li><a class="nav-link" href="#/results" data-route="results">Results</a></li>
+          <li><a class="nav-link" href="#/decks" data-route="decks">Decks</a></li>
+          <li><a class="nav-link" href="#/review" data-route="review">Review Answers</a></li>
+        </ul>
+      </nav>
+
+      <div class="keep-going">
+        <strong>Keep going!</strong>
+        <span>Small steps make big progress.</span>
+      </div>
+    </aside>
+
+    <main class="screen" id="screen" tabindex="-1"></main>
+
+    <script type="module" src="js/app.js"></script>
+  </body>
+</html>

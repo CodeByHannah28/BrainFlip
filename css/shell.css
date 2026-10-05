@@ -1,0 +1,217 @@
+/* ---------- Top bar (mobile only) ---------- */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.topbar .brand-name {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-weight: 700;
+}
+
+.menu-btn,
+.close-btn {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* ---------- Logo ---------- */
+.brand-logo {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: contain;
+}
+
+.topbar .brand-logo {
+  width: 32px;
+  height: 32px;
+}
+
+/* ---------- Sidebar: slide-in drawer on mobile ---------- */
+.sidebar {
+  position: fixed;
+  inset: 0 auto 0 0;
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  width: min(280px, 85vw);
+  padding: var(--space-5) var(--space-4);
+  overflow-y: auto;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition:
+    transform var(--duration) ease,
+    visibility 0s linear var(--duration);
+}
+
+body.nav-open .sidebar {
+  transform: none;
+  visibility: visible;
+  transition:
+    transform var(--duration) ease,
+    visibility 0s;
+}
+
+.sidebar :focus-visible {
+  outline-color: #ffffff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.brand .brand-name {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.brand-tagline {
+  margin: 0;
+  font-size: var(--text-sm);
+  opacity: 0.9;
+}
+
+.close-btn {
+  margin-left: auto;
+  background: rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+
+.nav-list {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-md);
+  color: inherit;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.nav-link:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.nav-link[aria-current='page'] {
+  background: rgba(255, 255, 255, 0.22);
+  font-weight: 700;
+}
+
+.keep-going {
+  display: grid;
+  gap: var(--space-1);
+  margin-top: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.14);
+  font-size: var(--text-sm);
+}
+
+.keep-going strong {
+  font-family: var(--font-heading);
+  font-size: var(--text-md);
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(42, 26, 18, 0.5);
+}
+
+/* ---------- Where every screen is drawn ---------- */
+.screen {
+  width: 100%;
+  max-width: 960px;
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-4);
+  outline: none;
+}
+
+/* ---------- Desktop: fixed sidebar (breakpoint: 900px) ---------- */
+@media (min-width: 900px) {
+  body {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    min-height: 100vh;
+  }
+
+  .topbar,
+  .scrim,
+  .close-btn {
+    display: none;
+  }
+
+  .sidebar {
+    position: sticky;
+    top: 0;
+    width: auto;
+    height: 100vh;
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+    color: var(--color-text);
+    transform: none;
+    visibility: visible;
+    transition: none;
+  }
+
+  .sidebar :focus-visible {
+    outline-color: var(--color-brand);
+  }
+
+  .brand-tagline {
+    color: var(--color-text-muted);
+    opacity: 1;
+  }
+
+  .nav-link:hover {
+    background: var(--color-timer-bg);
+  }
+
+  .nav-link[aria-current='page'] {
+    background: var(--color-brand);
+    color: var(--color-on-brand);
+  }
+
+  .keep-going {
+    background: var(--color-timer-bg);
+    color: var(--color-timer-text);
+  }
+
+  .screen {
+    padding: var(--space-6) var(--space-7);
+  }
+}
