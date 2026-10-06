@@ -1,90 +1,190 @@
-import { SETTINGS, MESSAGES, QUIZ_API_KEY } from './config.js';
-import { fallbackQuestions } from '../data/fallback-questions.js';
+import { SETTINGS, MESSAGES } from './config.js';
 
 function shuffle(list) {
   const copy = [...list];
+
   for (let i = copy.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
+
     [copy[i], copy[j]] = [copy[j], copy[i]];
   }
+
   return copy;
 }
 
-// Turns one QuizAPI question into OUR question format.
-// If the real response looks different, this is the only function to change.
-function normalizeQuizApiQuestion(item, topic) {
-  const options = [];
-  let correctIndex = -1;
-  let correctCount = 0;
+/**
+ * Decode HTML entities returned by Open Trivia DB.
+ *
+ * Open Trivia DB returns things like:
+ * &quot;The Pentagon&quot;
+ * Jos&eacute; Ra&uacute;l Capablanca
+ * Mario &amp; Luigi
+ */
+function decodeHtml(value) {
+  if (typeof value !== 'string') return '';
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = value;
 
-  for (const letter of ['a', 'b', 'c', 'd', 'e', 'f']) {
-    const text = item.answers?.[`answer_${letter}`];
-    if (!text) continue;
-    if (item.correct_answers?.[`answer_${letter}_correct`] === 'true') {
-      correctIndex = options.length;
-      correctCount += 1;
-    }
-    options.push(text);
-  }
-
-  // We only accept questions with exactly 4 options and 1 correct answer
-  if (options.length !== 4 || correctCount !== 1) return null;
-
-  return {
-    id: `${topic.id}-${item.id}`,
-    topic: topic.id,
-    question: item.question,
-    code: null,
-    options,
-    correctIndex,
-    explanation: item.explanation || '',
-  };
+  return textarea.value;
 }
 
-async function fetchFromQuizApi(topic, limit) {
-  if (!QUIZ_API_KEY) throw new Error('No QuizAPI key set');
-
+/**
+ * Fetch the category list from Open Trivia DB.
+ */
+export async function fetchCategories() {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), SETTINGS.requestTimeoutMs);
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, SETTINGS.requestTimeoutMs);
 
   try {
-    const url = new URL(`${SETTINGS.quizApiBase}/questions`);
-    url.search = new URLSearchParams({
-      apiKey: QUIZ_API_KEY,
-      limit: String(Math.min(limit * 2, 20)), // ask for extra: some get filtered out
-      tags: topic.tag,
-    }).toString();
+    const response = await fetch(
+      `${SETTINGS.triviaApiBase}/api_category.php`,
+      {
+        signal: controller.signal,
+      }
+    );
 
-    const response = await fetch(url, { signal: controller.signal });
-    if (!response.ok) throw new Error(`QuizAPI error ${response.status}`);
+    if (!response.ok) {
+      throw new Error(`Category request failed: ${response.status}`);
+    }
 
     const data = await response.json();
-    const questions = data
-      .map((item) => normalizeQuizApiQuestion(item, topic))
-      .filter(Boolean)
-      .slice(0, limit);
 
-    if (questions.length === 0) throw new Error('No usable questions came back');
-    return questions;
+    if (!data || !Array.isArray(data.trivia_categories)) {
+      throw new Error('Invalid category response');
+    }
+
+    const categories = data.trivia_categories
+      .filter((category) =>
+        category &&
+        Number.isInteger(category.id) &&
+        category.id > 0 &&
+        typeof category.name === 'string' &&
+        decodeHtml(category.name).trim()
+      )
+      .map((category) => ({ id: category.id, name: decodeHtml(category.name) }));
+
+    if (categories.length === 0) throw new Error('Empty category response');
+    return categories;
+  } catch (error) {
+    console.warn('Could not load Open Trivia DB categories:', error);
+    throw error;
   } finally {
     clearTimeout(timer);
   }
 }
 
-// The Quiz screen calls this. It never throws for API problems:
-// if the API fails, it returns local practice questions and a friendly message.
-export async function loadQuestions(topic, limit = SETTINGS.questionsPerQuiz) {
+/**
+ * Turn one Open Trivia DB question into the BrainFlip
+ * question format defined in README.md.
+ */
+function normalizeQuestion(item, categoryId) {
+  if (
+    !item ||
+    typeof item.question !== 'string' || !item.question.trim() ||
+    typeof item.correct_answer !== 'string' ||
+    !Array.isArray(item.incorrect_answers) ||
+    item.incorrect_answers.length !== 3 ||
+    item.incorrect_answers.some((answer) => typeof answer !== 'string')
+  ) return null;
+
+  const options = [
+    ...item.incorrect_answers,
+    item.correct_answer,
+  ].map(decodeHtml);
+
+  const question = decodeHtml(item.question);
+  const correctAnswer = decodeHtml(item.correct_answer);
+
+  if (
+    !question.trim() ||
+    options.some((option) => !option.trim()) ||
+    new Set(options).size !== 4
+  ) return null;
+
+  shuffle(options);
+
+  const correctIndex = options.indexOf(correctAnswer);
+
+  if (correctIndex === -1) return null;
+
+  return {
+    id: `${categoryId}-${crypto.randomUUID()}`,
+    topic: String(categoryId),
+    question,
+    code: null,
+    options,
+    correctIndex,
+    explanation: '',
+  };
+}
+
+/**
+ * Fetch quiz questions from Open Trivia DB.
+ */
+export async function loadQuestions(
+  categoryId,
+  limit = SETTINGS.questionsPerQuiz
+) {
+  const controller = new AbortController();
+
+  const timer = setTimeout(() => {
+    controller.abort();
+  }, SETTINGS.requestTimeoutMs);
+
   try {
-    const questions = await fetchFromQuizApi(topic, limit);
-    return { questions, source: 'api', message: '' };
+    const params = new URLSearchParams({
+      amount: String(limit),
+      category: String(categoryId),
+      type: 'multiple',
+    });
+
+    const response = await fetch(
+      `${SETTINGS.triviaApiBase}/api.php?${params}`,
+      {
+        signal: controller.signal,
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Question request failed: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    if (!data || !Number.isInteger(data.response_code)) {
+      throw new Error('Invalid question response');
+    }
+
+    if (data.response_code !== 0) {
+      throw new Error(
+        `Open Trivia DB response code: ${data.response_code}`
+      );
+    }
+
+    if (!Array.isArray(data.results)) {
+      throw new Error('Invalid question response');
+    }
+
+    if (data.results.length === 0) {
+      throw new Error(MESSAGES.noQuestions);
+    }
+
+    const questions = data.results
+      .map((item) => normalizeQuestion(item, categoryId))
+      .filter(Boolean);
+
+    if (questions.length === 0) {
+      throw new Error(MESSAGES.noQuestions);
+    }
+
+    return questions;
   } catch (error) {
-    console.warn('Questions API failed:', error.message);
-    const local = fallbackQuestions.filter((q) => q.topic === topic.id);
-    const pool = local.length > 0 ? local : fallbackQuestions;
-    return {
-      questions: shuffle(pool).slice(0, limit),
-      source: 'fallback',
-      message: MESSAGES.fallback,
-    };
+    console.warn('Could not load Open Trivia DB questions:', error);
+    throw error;
+  } finally {
+    clearTimeout(timer);
   }
 }

@@ -47,10 +47,14 @@ Routes: home, flashcards, quiz, results, decks, review.
 ## Flashcard format
 { id: 'card-js-1', topic: 'javascript', term: 'function', definition: '...' }
 
+## Quiz questions
+- `js/api.js` loads categories and multiple-choice questions from Open Trivia DB.
+- If question loading fails, the quiz shows an error; there is no fallback question bank.
+- Use the "Try Again" action after fixing the connection to retry.
+
 ## Loading and error messages (all in js/config.js)
 - Loading: "Getting your questions..."
-- Slow (after about 4 seconds): "This is taking a little longer than usual..."
-- API failed: practice questions are used and the user sees the fallback message.
+- API failure: the user sees the error message and no questions are substituted.
 
 ## App memory (js/state.js)
 topic, status, message, source, questions, currentIndex, answers,
