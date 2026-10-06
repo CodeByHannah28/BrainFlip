@@ -2,10 +2,10 @@ const listeners = new Set();
 
 function createInitialState() {
   return {
-    topic: null, // { id, label, tag }
+    topic: null, // { id, label } from the selected Open Trivia DB category
     status: 'idle', // 'idle' | 'loading' | 'ready' | 'error'
-    message: '', // friendly loading, fallback or error text
-    source: null, // 'api' | 'fallback'
+    message: '', // friendly loading or error text
+    source: null, // 'api' when questions are loaded from Open Trivia DB
     questions: [], // see "Question format" in the README
     currentIndex: 0,
     answers: [], // { questionId, pickedIndex, correctIndex, isCorrect }
