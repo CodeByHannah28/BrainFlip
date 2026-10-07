@@ -7,6 +7,7 @@ export function render(root) {
   let active = true;
   let timerInterval = null;
   let timeUsedSeconds = 0;
+  let autoStartTopic = getState().autoStartTopic;
 
   root.innerHTML = `
     <h1>Quiz</h1>
@@ -33,6 +34,8 @@ export function render(root) {
     answers: [],
     score: 0,
     finished: false,
+    timeUsedSeconds: 0,
+    autoStartTopic: null,
   });
 
   const form = root.querySelector('#quiz-topic-form');
@@ -243,6 +246,15 @@ export function render(root) {
       button.disabled = false;
       setState({ topic: null, status: 'idle', message: '', source: null, questions: [] });
       status.textContent = 'Choose a topic to load questions.';
+
+      if (autoStartTopic) {
+        const match = categories.find((item) => Number(item.id) === Number(autoStartTopic.id));
+        autoStartTopic = null;
+        if (match) {
+          select.value = String(match.id);
+          fetchAndRenderQuestions(match);
+        }
+      }
     } catch (error) {
       if (!active) return;
       console.warn('Quiz category loading failed:', error);
