@@ -11,15 +11,6 @@ function shuffle(list) {
 
   return copy;
 }
-
-/**
- * Decode HTML entities returned by Open Trivia DB.
- *
- * Open Trivia DB returns things like:
- * &quot;The Pentagon&quot;
- * Jos&eacute; Ra&uacute;l Capablanca
- * Mario &amp; Luigi
- */
 function decodeHtml(value) {
   if (typeof value !== 'string') return '';
   const textarea = document.createElement('textarea');
@@ -28,9 +19,6 @@ function decodeHtml(value) {
   return textarea.value;
 }
 
-/**
- * Fetch the category list from Open Trivia DB.
- */
 export async function fetchCategories() {
   const controller = new AbortController();
 
@@ -76,10 +64,6 @@ export async function fetchCategories() {
   }
 }
 
-/**
- * Turn one Open Trivia DB question into the BrainFlip
- * question format defined in README.md.
- */
 function normalizeQuestion(item, categoryId) {
   if (
     !item ||
@@ -121,9 +105,6 @@ function normalizeQuestion(item, categoryId) {
   };
 }
 
-/**
- * Fetch quiz questions from Open Trivia DB.
- */
 export async function loadQuestions(
   categoryId,
   limit = SETTINGS.questionsPerQuiz
