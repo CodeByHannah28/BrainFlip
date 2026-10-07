@@ -62,7 +62,6 @@ button {
   top: var(--space-3);
 }
 
-/* Shared building blocks: everyone uses these */
 .card {
   padding: var(--space-5);
   border-radius: var(--radius-xl);
@@ -101,6 +100,7 @@ button {
 
 .btn--success {
   background: var(--color-correct);
+  border-color: var(--color-correct);
   color: #ffffff;
 }
 
@@ -110,9 +110,9 @@ button {
 }
 
 .btn--wrong {
-  background: var(--color-wrong-bg);
+  background: var(--color-wrong);
   border-color: var(--color-wrong);
-  color: var(--color-wrong-text);
+  color: #ffffff;
 }
 
 .btn--success:disabled,

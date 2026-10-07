@@ -2,19 +2,21 @@ const listeners = new Set();
 
 function createInitialState() {
   return {
-    topic: null, // { id, label } from the selected Open Trivia DB category
-    status: 'idle', // 'idle' | 'loading' | 'ready' | 'error'
-    message: '', // friendly loading or error text
-    source: null, // 'api' when questions are loaded from Open Trivia DB
-    questions: [], // see "Question format" in the README
+    topic: null,
+    status: 'idle',
+    message: '',
+    source: null,
+    questions: [],
     currentIndex: 0,
-    answers: [], // { questionId, pickedIndex, correctIndex, isCorrect }
-    cards: [], // see "Flashcard format" in the README
-    knownCards: [], // ids of cards marked "Got it"
-    timeLimit: 0, // total seconds for the quiz
+    answers: [],
+    cards: [],
+    knownCards: [],
+    timeLimit: 0,
     secondsLeft: 0,
-    score: 0, // number of correct answers
+    score: 0,
     finished: false,
+    timeUsedSeconds: 0,
+    autoStartTopic: null,
   };
 }
 
@@ -38,7 +40,6 @@ export function resetState() {
   setState(createInitialState());
 }
 
-// Use pickedIndex = null when time runs out with no answer
 export function recordAnswer({ questionId, pickedIndex, correctIndex }) {
   const isCorrect = pickedIndex === correctIndex;
   setState({
