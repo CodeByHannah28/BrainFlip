@@ -109,6 +109,17 @@ button {
   cursor: not-allowed;
 }
 
+.btn--wrong {
+  background: var(--color-wrong-bg);
+  border-color: var(--color-wrong);
+  color: var(--color-wrong-text);
+}
+
+.btn--success:disabled,
+.btn--wrong:disabled {
+  opacity: 1;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
