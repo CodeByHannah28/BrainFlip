@@ -2,51 +2,12 @@ import { fetchCategories } from '../api.js';
 import { SETTINGS } from '../config.js';
 import { getState, setState } from '../state.js';
 import { goTo } from '../nav.js';
+import { TOPICS, getTopicData } from '../../data/topics.js';
 
-const PREFERRED_TOPIC_IDS = [18, 19, 9, 17, 23, 22];
 const TOPIC_COUNT = 6;
 const FLASHCARDS_PER_TOPIC = 10;
 const STYLESHEET_ID = 'home-styles';
 const ERROR_TEXT = 'Could not load topics. Please check your internet connection and try again.';
-
-const TOPIC_LOOKS = {
-  18: {
-    tile: '#ece9ff',
-    color: '#5b4bdb',
-    path: '<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 6l-3 12"/>',
-  },
-  19: {
-    tile: '#dbeafe',
-    color: '#1d4ed8',
-    path: '<path d="M4 8h8M8 4v8M14 8h6M5 14l6 6M11 14l-6 6M14 17h6"/>',
-  },
-  9: {
-    tile: '#fef3c7',
-    color: '#b45309',
-    path: '<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/>',
-  },
-  17: {
-    tile: '#dcfce7',
-    color: '#15803d',
-    path: '<path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3M7.5 15h9"/>',
-  },
-  23: {
-    tile: '#ffedd5',
-    color: '#c2410c',
-    path: '<path d="M3 10l9-6 9 6H3zM5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18"/>',
-  },
-  22: {
-    tile: '#cffafe',
-    color: '#0e7490',
-    path: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/>',
-  },
-};
-
-const DEFAULT_LOOK = {
-  tile: '#fdebd3',
-  color: '#c2410c',
-  path: '<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2zM4 19V5"/>',
-};
 
 const ICONS = {
   play: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l13 8-13 8z"/></svg>',
@@ -93,14 +54,7 @@ function ensureStyles() {
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character],
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 }
 
@@ -109,9 +63,8 @@ function cleanLabel(name) {
 }
 
 function pickTopics(categories) {
-  const preferred = PREFERRED_TOPIC_IDS.map((id) =>
-    categories.find((category) => category.id === id),
-  ).filter(Boolean);
+  const preferredIds = TOPICS.map((t) => t.id);
+  const preferred = preferredIds.map((id) => categories.find((c) => c.id === id)).filter(Boolean);
   const others = categories.filter((category) => !preferred.includes(category));
   return [...preferred, ...others]
     .slice(0, TOPIC_COUNT)
@@ -140,7 +93,7 @@ export function render(root) {
   }
 
   function topicHtml(topic) {
-    const look = TOPIC_LOOKS[topic.id] || DEFAULT_LOOK;
+    const look = getTopicData(topic.id);
     const selected = topic.id === selectedId;
     return `
       <li>
@@ -163,11 +116,7 @@ export function render(root) {
 
   function topicsHtml() {
     if (status === 'loading') {
-      return `
-        <div class="card home-message">
-          <p role="status">Getting topics...</p>
-        </div>
-      `;
+      return `<div class="card home-message"><p role="status">Getting topics...</p></div>`;
     }
 
     if (status === 'error') {

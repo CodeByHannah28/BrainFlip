@@ -99,6 +99,7 @@ body.nav-open .sidebar {
   display: flex;
   align-items: center;
   gap: var(--space-3);
+  margin-bottom: var(--space-2);
 }
 
 .brand .brand-name {
@@ -111,7 +112,7 @@ body.nav-open .sidebar {
 
 .brand-tagline {
   margin: 0;
-  font-size: var(--text-sm);
+  font-size: 0.7rem;
   opacity: 0.9;
 }
 
@@ -122,32 +123,36 @@ body.nav-open .sidebar {
 }
 
 .nav-list {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
+  flex-grow: 1; /* Pushes the keep-going card to the bottom */
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 48px;
+  min-height: 40px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   color: inherit;
+  font-size: var(--text-md); /* Bumped up from --text-sm */
   font-weight: 500;
   text-decoration: none;
+  transition: background var(--duration) ease;
 }
 
 .nav-icon {
   flex: none;
-  width: 22px;
-  height: 22px;
+  width: 20px; /* Bumped up from 18px */
+  height: 20px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
@@ -158,36 +163,37 @@ body.nav-open .sidebar {
 
 .nav-link[aria-current='page'] {
   background: rgba(255, 255, 255, 0.22);
-  font-weight: 700;
+  font-weight: 600;
 }
 
+/* Base Mobile Keep Going Card */
 .keep-going {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  column-gap: var(--space-3);
-  row-gap: var(--space-1);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
   margin-top: auto;
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.14);
-  font-size: var(--text-sm);
+  font-size: 0.8rem;
+  line-height: 1.4;
 }
 
 .cap-icon {
-  grid-row: 1 / 3;
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 22px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.8;
+  stroke-width: 2;
   stroke-linecap: round;
   stroke-linejoin: round;
+  margin-bottom: var(--space-1);
 }
 
 .keep-going strong {
   font-family: var(--font-heading);
-  font-size: var(--text-md);
+  font-size: 0.9rem;
+  font-weight: 700;
 }
 
 .scrim {
@@ -210,7 +216,7 @@ body.nav-open .sidebar {
 @media (min-width: 900px) {
   body {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
+    grid-template-columns: 240px minmax(0, 1fr);
     min-height: 100vh;
   }
 
@@ -225,8 +231,9 @@ body.nav-open .sidebar {
     top: 0;
     width: auto;
     height: 100vh;
+    padding: var(--space-6) var(--space-5);
     background: var(--color-surface);
-    border-right: 1px solid var(--color-border);
+    border-right: 1px solid var(--color-border); /* The outline is back! */
     color: var(--color-text);
     transform: none;
     visibility: visible;
@@ -251,23 +258,27 @@ body.nav-open .sidebar {
   }
 
   .nav-link:hover {
-    background: var(--color-timer-bg);
+    background: rgba(0, 0, 0, 0.04);
   }
 
   .nav-link[aria-current='page'] {
-    background: rgba(194, 65, 12, 0.1);
+    background: #fef0e8;
     color: var(--color-brand);
   }
 
+  /* Flip the card to beige to stand out against the white sidebar */
   .keep-going {
-    grid-template-columns: 1fr;
-    background: var(--color-timer-bg);
-    color: var(--color-timer-text);
+    background: var(--color-bg);
+    color: var(--color-text-muted);
+    box-shadow: none;
   }
 
   .cap-icon {
-    grid-row: auto;
     color: var(--color-brand);
+  }
+
+  .keep-going strong {
+    color: var(--color-text);
   }
 
   .screen {

@@ -1,5 +1,6 @@
 import { getState, setState } from '../state.js';
 import { goTo } from '../nav.js';
+import { saveScore, buildScore, loadScores } from '../scores-api.js';
 
 const QUICK_TOPICS = [
   { id: 18, label: 'Computers' },
@@ -39,14 +40,7 @@ function ensureStyles() {
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character],
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 }
 
@@ -59,28 +53,26 @@ function formatTime(totalSeconds) {
 function getSummary() {
   const { topic, questions, score, timeUsedSeconds, finished } = getState();
   const total = questions.length;
-  if (!finished || total === 0) return null;
+  if (!topic || total === 0) return null;
 
   const correct = score;
   const wrong = total - correct;
   const percent = Math.round((correct / total) * 100);
 
-  return { topic, total, correct, wrong, percent, timeUsedSeconds: timeUsedSeconds || 0 };
+  return { topic, total, correct, wrong, percent, timeUsedSeconds: timeUsedSeconds || 0, finished };
 }
 
 function getFeedback(percent) {
-  if (percent >= 80) {
+  if (percent >= 80)
     return {
       title: 'Great job!',
       text: `You scored ${percent}%. Keep going, you're making progress!`,
     };
-  }
-  if (percent >= 50) {
+  if (percent >= 50)
     return {
       title: 'Good effort!',
       text: `You scored ${percent}%. A little more practice and you'll get there.`,
     };
-  }
   return {
     title: 'Keep practicing!',
     text: `You scored ${percent}%. Review the questions you missed and try again.`,
@@ -92,26 +84,77 @@ function startQuiz(topic) {
   goTo('quiz');
 }
 
-function renderEmpty(root) {
-  root.innerHTML = `
-    <section class="results results-empty">
-      <h1>Quiz Results</h1>
-      <p>You have no results yet. Take a quiz to see how you did.</p>
-      <button class="btn btn--primary" id="results-start" type="button">Start a quiz</button>
+async function renderHistory(container) {
+  const scores = await loadScores();
+  if (!scores || scores.length === 0) return;
+
+  // Sort by date descending and grab top 5 attempts
+  const recent = scores.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+
+  const listHtml = recent
+    .map((score) => {
+      const total = score.correct + score.wrong;
+      const percent = Math.round((score.correct / total) * 100);
+      const dateStr = new Date(score.date).toLocaleDateString();
+
+      return `
+      <div class="results-history-item">
+        <div class="results-history-info">
+          <strong>${escapeHtml(score.topic)}</strong>
+          <span>${dateStr}</span>
+        </div>
+        <div class="results-history-metrics">
+          <span class="results-history-score ${percent >= 50 ? 'is-good' : 'is-bad'}">${percent}% (${score.correct}/${total})</span>
+          <span class="results-history-time">${formatTime(score.timeUsedSeconds)}</span>
+        </div>
+      </div>
+    `;
+    })
+    .join('');
+
+  container.innerHTML = `
+    <section class="results-history">
+      <h2 class="results-history-title">Recent Attempts</h2>
+      <div class="results-history-list">${listHtml}</div>
     </section>
   `;
-  root.querySelector('#results-start').addEventListener('click', () => goTo('quiz'));
 }
 
 export function render(root) {
   ensureStyles();
-
+  const state = getState();
   const summary = getSummary();
+
+  // 1. Check if we need to save the current score to history
+  if (summary && state.finished) {
+    const newScore = buildScore({
+      topic: summary.topic.label,
+      correct: summary.correct,
+      wrong: summary.wrong,
+      timeUsedSeconds: summary.timeUsedSeconds,
+    });
+
+    // Save it, then toggle finished to false so we don't save duplicates if they hit "Back"
+    saveScore(newScore);
+    setState({ finished: false });
+  }
+
+  // 2. Render the Empty State if no active quiz
   if (!summary) {
-    renderEmpty(root);
+    root.innerHTML = `
+      <section class="results results-empty">
+        <h1>Quiz Results</h1>
+        <p>You have no current results. Take a quiz to see how you did.</p>
+        <button class="btn btn--primary" id="results-start" type="button">Start a quiz</button>
+        <div id="history-container" style="width: 100%; margin-top: var(--space-5);"></div>
+      </section>
+    `;
+    root.querySelector('#results-start').addEventListener('click', () => goTo('decks'));
+    renderHistory(root.querySelector('#history-container'));
     return;
   }
 
+  // 3. Render the standard Results view
   const { topic, correct, wrong, percent, timeUsedSeconds } = summary;
   const feedback = getFeedback(percent);
 
@@ -123,25 +166,19 @@ export function render(root) {
   const chipsMarkup = chips
     .map(
       (chip) => `
-        <li>
-          <button
-            class="results-chip"
-            type="button"
-            data-id="${chip.id}"
-            data-label="${escapeHtml(chip.label)}"
-            aria-pressed="${topic && Number(topic.id) === chip.id ? 'true' : 'false'}"
-          >${escapeHtml(chip.label)}</button>
-        </li>
-      `,
+    <li>
+      <button class="results-chip" type="button" data-id="${chip.id}" data-label="${escapeHtml(chip.label)}"
+        aria-pressed="${topic && Number(topic.id) === chip.id ? 'true' : 'false'}"
+      >${escapeHtml(chip.label)}</button>
+    </li>
+  `,
     )
     .join('');
 
   root.innerHTML = `
     <section class="results">
       <header class="results-header">
-        <button class="results-back" id="results-back" type="button" aria-label="Back to home">
-          ${ICONS.back}
-        </button>
+        <button class="results-back" id="results-back" type="button" aria-label="Back to home">${ICONS.back}</button>
         <div>
           <h1>Quiz Results</h1>
           <p class="results-subtitle">${feedback.title} Here's how you did.</p>
@@ -152,12 +189,8 @@ export function render(root) {
         <div class="results-ring" role="img" aria-label="Your score: ${percent} percent">
           <svg viewBox="0 0 120 120" aria-hidden="true">
             <circle class="results-ring-track" cx="60" cy="60" r="52" pathLength="100"></circle>
-            <circle
-              class="results-ring-fill${percent === 0 ? ' results-ring-fill--empty' : ''}"
-              id="results-ring-fill"
-              cx="60" cy="60" r="52"
-              pathLength="100"
-              stroke-dasharray="0 100"
+            <circle class="results-ring-fill${percent === 0 ? ' results-ring-fill--empty' : ''}" id="results-ring-fill"
+              cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="0 100"
             ></circle>
           </svg>
           <div class="results-ring-label">
@@ -200,12 +233,8 @@ export function render(root) {
       </div>
 
       <div class="results-actions">
-        <button class="btn btn--primary" id="results-view" type="button">
-          ${ICONS.eye} View Questions
-        </button>
-        <button class="btn btn--outline" id="results-retake" type="button">
-          ${ICONS.retake} Retake Quiz
-        </button>
+        <button class="btn btn--primary" id="results-view" type="button">${ICONS.eye} View Questions</button>
+        <button class="btn btn--outline" id="results-retake" type="button">${ICONS.retake} Retake Quiz</button>
       </div>
 
       <section class="results-switch card" aria-labelledby="results-switch-title">
@@ -218,23 +247,23 @@ export function render(root) {
         </div>
         <ul class="results-chips">${chipsMarkup}</ul>
       </section>
+
+      <div id="history-container"></div>
     </section>
   `;
 
   const ringFill = root.querySelector('#results-ring-fill');
-  requestAnimationFrame(() => {
-    ringFill.setAttribute('stroke-dasharray', `${percent} 100`);
-  });
+  requestAnimationFrame(() => ringFill.setAttribute('stroke-dasharray', `${percent} 100`));
 
   root.querySelector('#results-back').addEventListener('click', () => goTo('home'));
   root.querySelector('#results-view').addEventListener('click', () => goTo('review'));
-  root.querySelector('#results-retake').addEventListener('click', () => {
-    if (topic) startQuiz(topic);
-    else goTo('quiz');
-  });
+  root.querySelector('#results-retake').addEventListener('click', () => startQuiz(topic));
   root.querySelectorAll('.results-chip').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      startQuiz({ id: Number(chip.dataset.id), label: chip.dataset.label });
-    });
+    chip.addEventListener('click', () =>
+      startQuiz({ id: Number(chip.dataset.id), label: chip.dataset.label }),
+    );
   });
+
+  // Render the history list at the bottom
+  renderHistory(root.querySelector('#history-container'));
 }
