@@ -1,13 +1,14 @@
 import { fetchCategories, loadQuestions } from '../api.js';
 import { getState, setState, markCardKnown } from '../state.js';
+import { TOPICS } from '../../data/topics.js';
 
-const PREFERRED_TOPIC_IDS = [18, 19, 9, 17, 23];
 const TOPIC_COUNT = 5;
 const CARDS_PER_DECK = 10;
 const RETRY_WAIT_MS = 5500;
 const STYLESHEET_ID = 'flashcards-styles';
 const LOADING_TEXT = 'Getting your flashcards...';
-const ERROR_TEXT = 'Could not load flashcards. Please check your internet connection and try again.';
+const ERROR_TEXT =
+  'Could not load flashcards. Please check your internet connection and try again.';
 const LONG_TEXT_LENGTH = 90;
 
 const deckCache = new Map();
@@ -36,14 +37,7 @@ function ensureStyles() {
 function escapeHtml(value) {
   return String(value).replace(
     /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character],
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
   );
 }
 
@@ -56,9 +50,8 @@ function cleanLabel(name) {
 }
 
 function pickTopics(categories) {
-  const preferred = PREFERRED_TOPIC_IDS.map((id) =>
-    categories.find((category) => category.id === id),
-  ).filter(Boolean);
+  const preferredIds = TOPICS.map((t) => t.id);
+  const preferred = preferredIds.map((id) => categories.find((c) => c.id === id)).filter(Boolean);
   const others = categories.filter((category) => !preferred.includes(category));
   return [...preferred, ...others]
     .slice(0, TOPIC_COUNT)

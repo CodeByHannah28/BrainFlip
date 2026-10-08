@@ -1,0 +1,141 @@
+/* css/screens/decks.css */
+.decks {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.decks-header-sub {
+  color: var(--color-brand);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+}
+
+.decks-header-title {
+  margin: 0 0 var(--space-2);
+}
+
+.decks-header-desc {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.decks-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+}
+
+.decks-filter {
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.decks-filter:hover {
+  background: var(--color-timer-bg);
+}
+
+.decks-filter[aria-pressed='true'] {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.decks-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.decks-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-5);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: left;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition:
+    transform var(--duration) ease,
+    border-color var(--duration) ease;
+}
+
+.decks-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--color-brand);
+}
+
+.decks-card-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.decks-card-title {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  margin: 0 0 var(--space-2);
+}
+
+.decks-card-desc {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin: 0 0 var(--space-5);
+  line-height: 1.4;
+  flex-grow: 1;
+}
+
+.decks-card-meta {
+  display: flex;
+  gap: var(--space-4);
+  font-size: 0.75rem;
+  color: var(--color-brand);
+  font-weight: 600;
+}
+
+.decks-card-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.decks-card-arrow {
+  position: absolute;
+  bottom: var(--space-5);
+  right: var(--space-5);
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  color: var(--color-brand);
+}
+
+@media (min-width: 640px) {
+  .decks-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .decks-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

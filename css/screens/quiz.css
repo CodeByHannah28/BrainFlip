@@ -1,0 +1,176 @@
+/* css/screens/quiz.css */
+.quiz-container {
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.quiz-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.quiz-topic-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+}
+
+.quiz-timer {
+  background: var(--color-timer-bg);
+  color: var(--color-timer-text);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.quiz-progress-bar {
+  height: 8px;
+  background: var(--color-border);
+  border-radius: var(--radius-pill);
+  margin-bottom: var(--space-6);
+  overflow: hidden;
+}
+
+.quiz-progress-fill {
+  height: 100%;
+  background: var(--color-brand);
+  transition: width var(--duration) ease;
+}
+
+.quiz-question-text {
+  margin-bottom: var(--space-5);
+}
+
+.quiz-code {
+  background: #f1f5f9;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  overflow-x: auto;
+  margin-bottom: var(--space-5);
+  font-family: monospace;
+  font-size: var(--text-sm);
+}
+
+.quiz-options-grid {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.quiz-option {
+  justify-content: flex-start;
+  text-align: left;
+  height: auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.quiz-option-letter {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  background: var(--color-bg);
+  color: var(--color-text);
+  border-radius: 50%;
+  margin-right: var(--space-3);
+  flex-shrink: 0;
+}
+
+/* Translucent circles for locked answer states */
+.btn--success .quiz-option-letter,
+.btn--wrong .quiz-option-letter {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+.quiz-option-text {
+  flex-grow: 1;
+}
+
+.quiz-option-icon {
+  margin-left: var(--space-3);
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* ... (keep everything from the top down to .quiz-option-icon) ... */
+
+/* Exact Figma colors for locked states */
+.btn--success.quiz-option {
+  background: var(--color-correct-bg);
+  border-color: var(--color-correct);
+  color: var(--color-text);
+}
+
+.btn--wrong.quiz-option {
+  background: var(--color-wrong-bg);
+  border-color: var(--color-wrong);
+  color: var(--color-text);
+}
+/* Solid circles for locked answer states */
+.btn--success .quiz-option-letter {
+  background: var(--color-correct);
+  color: #ffffff;
+  border: none;
+}
+
+.btn--wrong .quiz-option-letter {
+  background: var(--color-wrong);
+  color: #ffffff;
+  border: none;
+}
+
+.quiz-option-text {
+  flex-grow: 1;
+}
+
+.quiz-option-icon {
+  margin-left: var(--space-3);
+  display: flex;
+  flex-shrink: 0;
+}
+
+.quiz-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-6);
+}
+
+.quiz-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+}
+
+.quiz-message h2 {
+  margin: 0;
+}
+
+.quiz-message p {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Desktop: Add the card wrapper styling */
+@media (min-width: 900px) {
+  .quiz-container {
+    background: var(--color-surface);
+    border-radius: var(--radius-xl);
+    padding: var(--space-6) var(--space-7);
+    box-shadow: var(--shadow-card);
+  }
+}

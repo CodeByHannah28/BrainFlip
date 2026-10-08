@@ -88,9 +88,8 @@ function normalizeQuestion(item, categoryId) {
     new Set(options).size !== 4
   ) return null;
 
-  shuffle(options);
-
-  const correctIndex = options.indexOf(correctAnswer);
+  const shuffledOptions = shuffle(options);
+  const correctIndex = shuffledOptions.indexOf(correctAnswer);
 
   if (correctIndex === -1) return null;
 
@@ -99,7 +98,7 @@ function normalizeQuestion(item, categoryId) {
     topic: String(categoryId),
     question,
     code: null,
-    options,
+    options: shuffledOptions,
     correctIndex,
     explanation: '',
   };
