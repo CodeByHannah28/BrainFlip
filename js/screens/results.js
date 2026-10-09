@@ -1,200 +1,115 @@
-import { getState, setState } from '../state.js';
+import { getCategories } from '../api.js';
+import { MESSAGES } from '../config.js';
+import { getState, setState, resetQuiz } from '../state.js';
+import { onUserChange, getUser } from '../auth.js';
+import { saveQuizResult } from '../database.js';
 import { goTo } from '../nav.js';
-import { saveScore, buildScore, loadScores } from '../scores-api.js';
-
-const QUICK_TOPICS = [
-  { id: 18, label: 'Computers' },
-  { id: 19, label: 'Mathematics' },
-  { id: 9, label: 'General Knowledge' },
-  { id: 17, label: 'Science & Nature' },
-  { id: 23, label: 'History' },
-];
-
-const STYLESHEET_ID = 'results-styles';
-
-const ICONS = {
-  back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
-  check:
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
-  cross:
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-  clock:
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
-  trophy:
-    '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 4h8v5a4 4 0 0 1-8 0V4z"/><path d="M8 6H5v1a3 3 0 0 0 3 3M16 6h3v1a3 3 0 0 1-3 3M12 13v4M9 20h6M10 17h4"/></svg>',
-  eye: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
-  retake:
-    '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>',
-  deck: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="13" height="13" rx="3"/><path d="M16 20H6a3 3 0 0 1-3-3V8"/></svg>',
-};
-
-function ensureStyles() {
-  if (document.getElementById(STYLESHEET_ID)) return;
-  const link = document.createElement('link');
-  link.id = STYLESHEET_ID;
-  link.rel = 'stylesheet';
-  link.href = new URL('../../css/screens/results.css', import.meta.url).href;
-  document.head.appendChild(link);
-}
-
-function escapeHtml(value) {
-  return String(value).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  );
-}
-
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}m ${seconds}s`;
-}
+import { escapeHtml, formatDuration } from '../helpers.js';
+import { ICONS } from '../icons.js';
 
 function getSummary() {
-  const { topic, questions, score, timeUsedSeconds, finished } = getState();
-  const total = questions.length;
-  if (!topic || total === 0) return null;
+  const state = getState();
+  if (!state.finished || state.questions.length === 0) {
+    return null;
+  }
 
-  const correct = score;
-  const wrong = total - correct;
-  const percent = Math.round((correct / total) * 100);
+  let correct = 0;
+  let answered = 0;
+  for (let i = 0; i < state.questions.length; i++) {
+    const answer = state.answers[i];
+    if (answer && answer.pickedIndex !== -1) {
+      answered++;
+    }
+    if (answer && answer.isCorrect) {
+      correct++;
+    }
+  }
 
-  return { topic, total, correct, wrong, percent, timeUsedSeconds: timeUsedSeconds || 0, finished };
-}
-
-function getFeedback(percent) {
-  if (percent >= 80)
-    return {
-      title: 'Great job!',
-      text: `You scored ${percent}%. Keep going, you're making progress!`,
-    };
-  if (percent >= 50)
-    return {
-      title: 'Good effort!',
-      text: `You scored ${percent}%. A little more practice and you'll get there.`,
-    };
+  const total = state.questions.length;
   return {
-    title: 'Keep practicing!',
-    text: `You scored ${percent}%. Review the questions you missed and try again.`,
+    category: state.selectedCategory,
+    total: total,
+    answered: answered,
+    correct: correct,
+    wrong: total - correct,
+    percent: Math.round((correct / total) * 100),
+    timeUsedSeconds: state.timeUsedSeconds,
   };
 }
 
-function startQuiz(topic) {
-  setState({ autoStartTopic: { id: topic.id, label: topic.label } });
-  goTo('quiz');
-}
-
-async function renderHistory(container) {
-  const scores = await loadScores();
-  if (!scores || scores.length === 0) return;
-
-  // Sort by date descending and grab top 5 attempts
-  const recent = scores.sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
-
-  const listHtml = recent
-    .map((score) => {
-      const total = score.correct + score.wrong;
-      const percent = Math.round((score.correct / total) * 100);
-      const dateStr = new Date(score.date).toLocaleDateString();
-
-      return `
-      <div class="results-history-item">
-        <div class="results-history-info">
-          <strong>${escapeHtml(score.topic)}</strong>
-          <span>${dateStr}</span>
-        </div>
-        <div class="results-history-metrics">
-          <span class="results-history-score ${percent >= 50 ? 'is-good' : 'is-bad'}">${percent}% (${score.correct}/${total})</span>
-          <span class="results-history-time">${formatTime(score.timeUsedSeconds)}</span>
-        </div>
-      </div>
-    `;
-    })
-    .join('');
-
-  container.innerHTML = `
-    <section class="results-history">
-      <h2 class="results-history-title">Recent Attempts</h2>
-      <div class="results-history-list">${listHtml}</div>
-    </section>
-  `;
+function getFeedback(percent) {
+  if (percent >= 80) {
+    return {
+      title: 'Great job!',
+      text: 'You scored ' + percent + '%. Keep going, you\'re making progress!',
+    };
+  }
+  if (percent >= 50) {
+    return {
+      title: 'Good effort!',
+      text: 'You scored ' + percent + '%. A little more practice and you\'ll get there.',
+    };
+  }
+  return {
+    title: 'Keep practicing!',
+    text: 'You scored ' + percent + '%. Review the questions you missed and try again.',
+  };
 }
 
 export function render(root) {
-  ensureStyles();
-  const state = getState();
+  let active = true;
   const summary = getSummary();
 
-  // 1. Check if we need to save the current score to history
-  if (summary && state.finished) {
-    const newScore = buildScore({
-      topic: summary.topic.label,
-      correct: summary.correct,
-      wrong: summary.wrong,
-      timeUsedSeconds: summary.timeUsedSeconds,
-    });
-
-    // Save it, then toggle finished to false so we don't save duplicates if they hit "Back"
-    saveScore(newScore);
-    setState({ finished: false });
-  }
-
-  // 2. Render the Empty State if no active quiz
   if (!summary) {
     root.innerHTML = `
       <section class="results results-empty">
         <h1>Quiz Results</h1>
-        <p>You have no current results. Take a quiz to see how you did.</p>
+        <p>You have no results yet. Take a quiz to see how you did.</p>
         <button class="btn btn--primary" id="results-start" type="button">Start a quiz</button>
-        <div id="history-container" style="width: 100%; margin-top: var(--space-5);"></div>
       </section>
     `;
-    root.querySelector('#results-start').addEventListener('click', () => goTo('decks'));
-    renderHistory(root.querySelector('#history-container'));
-    return;
+    root.querySelector('#results-start').addEventListener('click', function () {
+      goTo('home');
+    });
+    return null;
   }
 
-  // 3. Render the standard Results view
-  const { topic, correct, wrong, percent, timeUsedSeconds } = summary;
-  const feedback = getFeedback(percent);
-
-  const chips = [...QUICK_TOPICS];
-  if (topic && !chips.some((chip) => chip.id === Number(topic.id))) {
-    chips.unshift({ id: Number(topic.id), label: topic.label });
+  const feedback = getFeedback(summary.percent);
+  let ringClass = 'results-ring-fill';
+  if (summary.percent === 0) {
+    ringClass = 'results-ring-fill results-ring-fill--empty';
   }
-
-  const chipsMarkup = chips
-    .map(
-      (chip) => `
-    <li>
-      <button class="results-chip" type="button" data-id="${chip.id}" data-label="${escapeHtml(chip.label)}"
-        aria-pressed="${topic && Number(topic.id) === chip.id ? 'true' : 'false'}"
-      >${escapeHtml(chip.label)}</button>
-    </li>
-  `,
-    )
-    .join('');
 
   root.innerHTML = `
     <section class="results">
       <header class="results-header">
-        <button class="results-back" id="results-back" type="button" aria-label="Back to home">${ICONS.back}</button>
+        <button class="results-back" id="results-back" type="button" aria-label="Back to home">
+          ${ICONS.back}
+        </button>
         <div>
           <h1>Quiz Results</h1>
-          <p class="results-subtitle">${feedback.title} Here's how you did.</p>
+          <p class="results-subtitle">
+            ${feedback.title} You answered ${summary.answered} of ${summary.total} questions.
+          </p>
         </div>
       </header>
 
       <div class="results-summary card">
-        <div class="results-ring" role="img" aria-label="Your score: ${percent} percent">
+        <div class="results-ring" role="img" aria-label="Your score: ${summary.percent} percent">
           <svg viewBox="0 0 120 120" aria-hidden="true">
             <circle class="results-ring-track" cx="60" cy="60" r="52" pathLength="100"></circle>
-            <circle class="results-ring-fill${percent === 0 ? ' results-ring-fill--empty' : ''}" id="results-ring-fill"
-              cx="60" cy="60" r="52" pathLength="100" stroke-dasharray="0 100"
+            <circle
+              class="${ringClass}"
+              id="results-ring-fill"
+              cx="60"
+              cy="60"
+              r="52"
+              pathLength="100"
+              stroke-dasharray="0 100"
             ></circle>
           </svg>
           <div class="results-ring-label">
-            <strong>${percent}%</strong>
+            <strong>${summary.percent}%</strong>
             <span>Your Score</span>
           </div>
         </div>
@@ -203,21 +118,21 @@ export function render(root) {
           <div class="results-stat results-stat--correct">
             <span class="results-stat-icon">${ICONS.check}</span>
             <div>
-              <strong class="results-stat-value">${correct}</strong>
+              <strong class="results-stat-value">${summary.correct}</strong>
               <span class="results-stat-label">Correct</span>
             </div>
           </div>
           <div class="results-stat results-stat--wrong">
             <span class="results-stat-icon">${ICONS.cross}</span>
             <div>
-              <strong class="results-stat-value">${wrong}</strong>
+              <strong class="results-stat-value">${summary.wrong}</strong>
               <span class="results-stat-label">Wrong</span>
             </div>
           </div>
           <div class="results-stat results-stat--time">
             <span class="results-stat-icon">${ICONS.clock}</span>
             <div>
-              <strong class="results-stat-value">${formatTime(timeUsedSeconds)}</strong>
+              <strong class="results-stat-value">${formatDuration(summary.timeUsedSeconds)}</strong>
               <span class="results-stat-label">Time Used</span>
             </div>
           </div>
@@ -232,9 +147,15 @@ export function render(root) {
         </div>
       </div>
 
+      <p class="results-note" id="results-note"></p>
+
       <div class="results-actions">
-        <button class="btn btn--primary" id="results-view" type="button">${ICONS.eye} View Questions</button>
-        <button class="btn btn--outline" id="results-retake" type="button">${ICONS.retake} Retake Quiz</button>
+        <button class="btn btn--primary" id="results-view" type="button">
+          ${ICONS.eye} View Questions
+        </button>
+        <button class="btn btn--outline" id="results-retake" type="button">
+          ${ICONS.retake} Retake Quiz
+        </button>
       </div>
 
       <section class="results-switch card" aria-labelledby="results-switch-title">
@@ -245,25 +166,138 @@ export function render(root) {
             <p class="results-switch-sub">Try a different topic and keep learning.</p>
           </div>
         </div>
-        <ul class="results-chips">${chipsMarkup}</ul>
+        <ul class="results-chips" id="results-chips"></ul>
       </section>
-
-      <div id="history-container"></div>
     </section>
   `;
 
-  const ringFill = root.querySelector('#results-ring-fill');
-  requestAnimationFrame(() => ringFill.setAttribute('stroke-dasharray', `${percent} 100`));
+  const note = root.querySelector('#results-note');
+  const chipList = root.querySelector('#results-chips');
 
-  root.querySelector('#results-back').addEventListener('click', () => goTo('home'));
-  root.querySelector('#results-view').addEventListener('click', () => goTo('review'));
-  root.querySelector('#results-retake').addEventListener('click', () => startQuiz(topic));
-  root.querySelectorAll('.results-chip').forEach((chip) => {
-    chip.addEventListener('click', () =>
-      startQuiz({ id: Number(chip.dataset.id), label: chip.dataset.label }),
-    );
+  const ringFill = root.querySelector('#results-ring-fill');
+  requestAnimationFrame(function () {
+    ringFill.setAttribute('stroke-dasharray', summary.percent + ' 100');
   });
 
-  // Render the history list at the bottom
-  renderHistory(root.querySelector('#history-container'));
+  function startQuizWith(category) {
+    setState({ selectedCategory: category });
+    resetQuiz();
+    goTo('quiz');
+  }
+
+  async function saveResult() {
+    if (!getUser()) {
+      note.textContent = MESSAGES.signInTip + '.';
+      return;
+    }
+
+    const state = getState();
+    if (state.resultSaved === true) {
+      note.textContent = 'This result is saved to your progress.';
+      return;
+    }
+    if (state.resultSaved === 'saving') {
+      note.textContent = 'Saving your result...';
+      return;
+    }
+
+    setState({ resultSaved: 'saving' });
+    note.textContent = 'Saving your result...';
+
+    try {
+      await saveQuizResult({
+        category: summary.category.name,
+        categoryId: summary.category.id,
+        difficulty: state.difficulty || 'any',
+        total: summary.total,
+        answered: summary.answered,
+        correct: summary.correct,
+        wrong: summary.wrong,
+        percent: summary.percent,
+        timeUsedSeconds: summary.timeUsedSeconds,
+      });
+      setState({ resultSaved: true });
+      if (active) {
+        note.textContent = 'This result is saved to your progress.';
+      }
+    } catch (error) {
+      setState({ resultSaved: false });
+      if (active) {
+        note.textContent = 'Could not save this result. Check your connection and try again.';
+      }
+    }
+  }
+
+  async function showChips() {
+    let categories = [];
+    try {
+      categories = await getCategories();
+    } catch (error) {
+      return;
+    }
+    if (!active) {
+      return;
+    }
+
+    let html = `
+      <li>
+        <button class="results-chip" type="button" data-id="${summary.category.id}" data-name="${escapeHtml(summary.category.name)}" aria-pressed="true">
+          ${escapeHtml(summary.category.name)}
+        </button>
+      </li>
+    `;
+    let added = 0;
+    for (let i = 0; i < categories.length && added < 5; i++) {
+      if (categories[i].id === summary.category.id) {
+        continue;
+      }
+      html += `
+        <li>
+          <button class="results-chip" type="button" data-id="${categories[i].id}" data-name="${escapeHtml(categories[i].name)}" aria-pressed="false">
+            ${escapeHtml(categories[i].name)}
+          </button>
+        </li>
+      `;
+      added++;
+    }
+    html += `
+      <li>
+        <button class="results-chip" type="button" id="more-topics" aria-pressed="false">More topics</button>
+      </li>
+    `;
+    chipList.innerHTML = html;
+
+    const chips = chipList.querySelectorAll('.results-chip');
+    for (let i = 0; i < chips.length; i++) {
+      chips[i].addEventListener('click', handleChipClick);
+    }
+  }
+
+  function handleChipClick(event) {
+    const button = event.currentTarget;
+    if (button.id === 'more-topics') {
+      goTo('decks');
+      return;
+    }
+    startQuizWith({ id: Number(button.dataset.id), name: button.dataset.name });
+  }
+
+  root.querySelector('#results-back').addEventListener('click', function () {
+    goTo('home');
+  });
+  root.querySelector('#results-view').addEventListener('click', function () {
+    goTo('review');
+  });
+  root.querySelector('#results-retake').addEventListener('click', function () {
+    startQuizWith(summary.category);
+  });
+
+  const stopListening = onUserChange(saveResult);
+  saveResult();
+  showChips();
+
+  return function () {
+    active = false;
+    stopListening();
+  };
 }

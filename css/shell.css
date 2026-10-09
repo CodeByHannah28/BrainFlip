@@ -1,39 +1,19 @@
-/* ---------- Top bar (mobile only) ---------- */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 20;
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4);
   background: var(--color-bg);
   border-bottom: 1px solid var(--color-border);
 }
 
-.topbar-brand {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-}
-
 .topbar .brand-name {
   margin: 0;
   font-family: var(--font-heading);
-  font-size: var(--text-lg);
   font-weight: 700;
-  line-height: 1.1;
-}
-
-.topbar .brand-tagline {
-  color: var(--color-text-muted);
-  font-size: 0.75rem;
-}
-
-.topbar .menu-btn {
-  background: transparent;
-  color: var(--color-brand);
 }
 
 .menu-btn,
@@ -49,21 +29,113 @@
   cursor: pointer;
 }
 
-/* ---------- Logo ---------- */
 .brand-logo {
   flex: none;
-  width: 56px;
-  height: 56px;
-  color: inherit;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: contain;
 }
 
 .topbar .brand-logo {
-  width: 48px;
-  height: 48px;
-  color: var(--color-brand);
+  width: 32px;
+  height: 32px;
 }
 
-/* ---------- Sidebar: slide-in drawer on mobile ---------- */
+.auth-area {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.auth-btn {
+  min-height: 40px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.auth-more {
+  display: none;
+}
+
+.google-g {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  font-family: var(--font-heading);
+  font-weight: 700;
+
+    border: 3px solid #fff7f1;
+}
+
+.tooltip {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  width: 250px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-text);
+  color: var(--color-white);
+  box-shadow: var(--shadow-lift);
+}
+
+.tooltip::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  right: 40px;
+  width: 12px;
+  height: 12px;
+  background: var(--color-text);
+  transform: rotate(45deg);
+}
+
+.tooltip p {
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.tooltip-close {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-white);
+  cursor: pointer;
+}
+
+.tooltip-close:hover {
+  background: var(--color-brand);
+}
+
 .sidebar {
   position: fixed;
   inset: 0 auto 0 0;
@@ -92,14 +164,13 @@ body.nav-open .sidebar {
 }
 
 .sidebar :focus-visible {
-  outline-color: #ffffff;
+  outline-color: var(--color-white);
 }
 
 .brand {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-2);
 }
 
 .brand .brand-name {
@@ -112,49 +183,38 @@ body.nav-open .sidebar {
 
 .brand-tagline {
   margin: 0;
-  font-size: 0.7rem;
+  font-size: var(--text-sm);
   opacity: 0.9;
 }
 
 .close-btn {
   margin-left: auto;
   background: rgba(255, 255, 255, 0.18);
-  color: #ffffff;
+  color: var(--color-white);
 }
 
 .nav-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  display: grid;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
-  flex-grow: 1; /* Pushes the keep-going card to the bottom */
 }
 
 .nav-link {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-height: 40px;
+  min-height: 44px;
   padding: 0 var(--space-3);
   border-radius: var(--radius-md);
   color: inherit;
-  font-size: var(--text-md); /* Bumped up from --text-sm */
   font-weight: 500;
   text-decoration: none;
-  transition: background var(--duration) ease;
 }
 
-.nav-icon {
+.nav-link svg {
   flex: none;
-  width: 20px; /* Bumped up from 18px */
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 
 .nav-link:hover {
@@ -163,37 +223,22 @@ body.nav-open .sidebar {
 
 .nav-link[aria-current='page'] {
   background: rgba(255, 255, 255, 0.22);
-  font-weight: 600;
+  font-weight: 700;
 }
 
-/* Base Mobile Keep Going Card */
 .keep-going {
-  display: flex;
-  flex-direction: column;
+  display: grid;
   gap: var(--space-1);
   margin-top: auto;
   padding: var(--space-4);
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.14);
-  font-size: 0.8rem;
-  line-height: 1.4;
-}
-
-.cap-icon {
-  width: 22px;
-  height: 22px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-  margin-bottom: var(--space-1);
+  font-size: var(--text-sm);
 }
 
 .keep-going strong {
   font-family: var(--font-heading);
-  font-size: 0.9rem;
-  font-weight: 700;
+  font-size: var(--text-md);
 }
 
 .scrim {
@@ -203,7 +248,6 @@ body.nav-open .sidebar {
   background: rgba(42, 26, 18, 0.5);
 }
 
-/* ---------- Where every screen is drawn ---------- */
 .screen {
   width: 100%;
   max-width: 960px;
@@ -212,18 +256,36 @@ body.nav-open .sidebar {
   outline: none;
 }
 
-/* ---------- Desktop: fixed sidebar (breakpoint: 900px) ---------- */
+@media (min-width: 480px) {
+  .auth-more {
+    display: inline;
+  }
+}
+
 @media (min-width: 900px) {
   body {
     display: grid;
-    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
     min-height: 100vh;
   }
 
-  .topbar,
   .scrim,
-  .close-btn {
+  .close-btn,
+  .topbar .menu-btn,
+  .topbar .brand-logo,
+  .topbar .brand-name {
     display: none;
+  }
+
+  .topbar {
+    position: fixed;
+    top: 0;
+    left: 260px;
+    right: 0;
+    justify-content: flex-end;
+    padding: var(--space-4) var(--space-6);
+    background: transparent;
+    border-bottom: 0;
   }
 
   .sidebar {
@@ -231,9 +293,8 @@ body.nav-open .sidebar {
     top: 0;
     width: auto;
     height: 100vh;
-    padding: var(--space-6) var(--space-5);
     background: var(--color-surface);
-    border-right: 1px solid var(--color-border); /* The outline is back! */
+    border-right: 1px solid var(--color-border);
     color: var(--color-text);
     transform: none;
     visibility: visible;
@@ -249,39 +310,21 @@ body.nav-open .sidebar {
     opacity: 1;
   }
 
-  .brand-logo {
-    color: var(--color-brand);
-  }
-
-  .nav-link {
-    color: var(--color-text-muted);
-  }
-
   .nav-link:hover {
-    background: rgba(0, 0, 0, 0.04);
+    background: var(--color-timer-bg);
   }
 
   .nav-link[aria-current='page'] {
-    background: #fef0e8;
-    color: var(--color-brand);
+    background: var(--color-brand);
+    color: var(--color-on-brand);
   }
 
-  /* Flip the card to beige to stand out against the white sidebar */
   .keep-going {
-    background: var(--color-bg);
-    color: var(--color-text-muted);
-    box-shadow: none;
-  }
-
-  .cap-icon {
-    color: var(--color-brand);
-  }
-
-  .keep-going strong {
-    color: var(--color-text);
+    background: var(--color-timer-bg);
+    color: var(--color-timer-text);
   }
 
   .screen {
-    padding: var(--space-6) var(--space-7);
+    padding: 70px var(--space-7) var(--space-6);
   }
 }

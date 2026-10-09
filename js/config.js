@@ -1,23 +1,20 @@
 export const SETTINGS = {
-  breakpoint: 900,
   questionsPerQuiz: 10,
+  amountOptions: [5, 10, 15, 20],
   secondsPerQuestion: 30,
-  requestTimeoutMs: 8000,
-
-  // Open Trivia DB
+  requestTimeoutMs: 10000,
+  requestGapMs: 5200,
+  signInDays: 30,
   triviaApiBase: 'https://opentdb.com',
-
-  backendBase: 'http://localhost:3000',
 };
 
-// User-facing messages used throughout the question-loading flow.
 export const MESSAGES = {
   loading: 'Getting your questions...',
-  slow: 'This is taking a little longer than usual...',
-  error:
-    'Could not load questions. Please check your internet connection and try again.',
+  loadingTopics: 'Getting topics...',
+  error: 'Could not load questions. Please check your internet connection and try again.',
+  topicsError: 'Could not load topics. Please check your internet connection and try again.',
   noQuestions:
-    'No questions were available for this topic. Please choose another topic and try again.',
-  scoreNotSaved:
-    "We couldn't save your score online, so it was saved on this device.",
+    'There are not enough questions for this topic and difficulty. Try fewer questions, another difficulty or another topic.',
+  guest: "You haven't created an account, so your progress isn't saved.",
+  signInTip: 'Sign in with Google to save your progress',
 };

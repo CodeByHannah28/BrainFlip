@@ -1,9 +1,11 @@
+import { setupAuthUi } from './auth-ui.js';
 import * as home from './screens/home.js';
 import * as flashcards from './screens/flashcards.js';
 import * as quiz from './screens/quiz.js';
 import * as results from './screens/results.js';
 import * as decks from './screens/decks.js';
 import * as review from './screens/review.js';
+import * as progress from './screens/progress.js';
 
 const routes = {
   home: { title: 'Home', screen: home },
@@ -12,9 +14,8 @@ const routes = {
   results: { title: 'Results', screen: results },
   decks: { title: 'Decks', screen: decks },
   review: { title: 'Review Answers', screen: review },
+  progress: { title: 'Progress', screen: progress },
 };
-
-const DEFAULT_ROUTE = 'home';
 
 const screenRoot = document.getElementById('screen');
 const menuBtn = document.getElementById('menu-btn');
@@ -39,41 +40,58 @@ function closeMenu() {
 }
 
 function getRouteName() {
-  const name = location.hash.replace(/^#\/?/, '');
-  return Object.hasOwn(routes, name) ? name : DEFAULT_ROUTE;
+  const name = location.hash.replace('#/', '');
+  if (Object.keys(routes).includes(name)) {
+    return name;
+  }
+  return 'home';
 }
 
 function renderRoute() {
   const name = getRouteName();
   const route = routes[name];
 
-  // Let the old screen stop its timers and listeners
-  if (typeof cleanup === 'function') cleanup();
+  if (typeof cleanup === 'function') {
+    cleanup();
+  }
 
   screenRoot.innerHTML = '';
-  cleanup = route.screen.render(screenRoot) ?? null;
+  cleanup = route.screen.render(screenRoot);
 
-  document.title = `${route.title} | BrainFlip`;
-  document.querySelectorAll('[data-route]').forEach((link) => {
-    if (link.dataset.route === name) link.setAttribute('aria-current', 'page');
-    else link.removeAttribute('aria-current');
-  });
+  document.title = route.title + ' | BrainFlip';
+
+  const links = document.querySelectorAll('[data-route]');
+  for (let i = 0; i < links.length; i++) {
+    if (links[i].dataset.route === name) {
+      links[i].setAttribute('aria-current', 'page');
+    } else {
+      links[i].removeAttribute('aria-current');
+    }
+  }
 
   closeMenu();
-  if (!firstRender) screenRoot.focus();
+  if (!firstRender) {
+    screenRoot.focus();
+  }
   firstRender = false;
 }
 
 menuBtn.addEventListener('click', openMenu);
-closeBtn.addEventListener('click', () => {
+
+closeBtn.addEventListener('click', function () {
   closeMenu();
   menuBtn.focus();
 });
+
 scrim.addEventListener('click', closeMenu);
-navList.addEventListener('click', (event) => {
-  if (event.target.closest('a')) closeMenu();
+
+navList.addEventListener('click', function (event) {
+  if (event.target.closest('a')) {
+    closeMenu();
+  }
 });
-document.addEventListener('keydown', (event) => {
+
+document.addEventListener('keydown', function (event) {
   if (event.key === 'Escape' && document.body.classList.contains('nav-open')) {
     closeMenu();
     menuBtn.focus();
@@ -81,4 +99,6 @@ document.addEventListener('keydown', (event) => {
 });
 
 window.addEventListener('hashchange', renderRoute);
+
+setupAuthUi();
 renderRoute();

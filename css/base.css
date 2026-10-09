@@ -98,10 +98,8 @@ button {
   color: var(--color-brand);
 }
 
-.btn--success {
-  background: var(--color-correct);
-  border-color: var(--color-correct);
-  color: #ffffff;
+.btn--outline:hover {
+  background: var(--color-timer-bg);
 }
 
 .btn:disabled {
@@ -109,19 +107,102 @@ button {
   cursor: not-allowed;
 }
 
-.btn--wrong {
-  background: var(--color-wrong);
-  border-color: var(--color-wrong);
-  color: #ffffff;
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
-.btn--success:disabled,
-.btn--wrong:disabled {
-  opacity: 1;
+.chip {
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-[hidden] {
-  display: none !important;
+.chip:hover {
+  background: var(--color-timer-bg);
+}
+
+.chip--active {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+
+.chip--active:hover {
+  background: var(--color-brand-dark);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.field select {
+  min-height: 44px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.loading-box,
+.error-box {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.loading-box p,
+.error-box p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.error-box h2 {
+  margin: 0;
+  color: var(--color-wrong);
+}
+
+.error-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-wrong-bg);
+  color: var(--color-wrong);
+}
+
+.loader {
+  width: 44px;
+  height: 44px;
+  border: 5px solid var(--color-border);
+  border-top-color: var(--color-brand);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -129,6 +210,7 @@ button {
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

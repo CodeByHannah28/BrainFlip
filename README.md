@@ -1,68 +1,49 @@
 # BrainFlip
-A timed quiz and 3D flip flashcard app for exam prep. Pick a topic, answer multiple-choice questions against the clock, flip cards to learn definitions, and review every answer at the end. Built with HTML, CSS and vanilla JavaScript.
 
+Timed multiple-choice quizzes and 3D flip flashcards. Questions and topics come from Open Trivia DB. Google sign-in and saved progress use Firebase.
 
-Flip it till you know it. Timed quizzes and 3D flip flashcards for exam prep.
+Plain HTML, CSS and JavaScript. No framework, no build step.
 
 ## Run it
-1. Install VS Code and the Live Server and Prettier extensions.
-2. Clone the repo and open the folder in VS Code.
-3. Right-click `index.html` > Open with Live Server.
 
-## Where things go
-- `css/tokens.css`: colours, fonts, spacing. Use these names, never raw values.
-- `css/screens/`: one CSS file per screen (create yours, link it from your screen's JS if needed).
-- `js/screens/`: one file per screen. Each exports `render(root)` and may return a cleanup function.
-- `js/state.js`: shared app memory. Quiz, Results and Review Answers all read it.
-- `js/api.js`: loads questions. `js/scores-api.js`: saves and loads scores.
-- `js/nav.js`: `goTo('results')` moves to another screen.
-- `data/`: local flashcards and practice questions.
-- `backend/`: the scores backend (Task 11).
+ES modules do not work from `file://`. Serve the folder:
+
+- VS Code Live Server, or
+- `python3 -m http.server 5500` then open `http://localhost:5500`
+
+## Firebase setup
+
+1. Create a project in the Firebase console.
+2. Add a Web app and copy its config into `js/firebase-config.js`.
+3. Authentication > Sign-in method: enable Google.
+4. Authentication > Settings > Authorized domains: add `localhost`, `127.0.0.1` and your live domain.
+5. Create a Firestore database.
+6. Firestore > Rules: paste `firestore.rules` and publish.
+
+The web config values are public. Security comes from Authentication and the Firestore rules.
+
+## Folder guide
+
+```
+index.html           page shell: sidebar, top bar, sign-in area
+css/                 tokens.css, base.css, shell.css
+css/screens/         one file per screen
+js/app.js            router and menu
+js/api.js            all Open Trivia DB requests
+js/state.js          shared in-memory session data
+js/auth.js           Firebase sign-in state and 30-day limit
+js/auth-ui.js        sign-in button, avatar, sign-out, tooltip
+js/database.js       Firestore reads and writes
+js/screens/          one file per screen
+firestore.rules      Firestore security rules
+```
 
 ## Rules
-- Nobody works on `main`. One branch per task: `feature/quiz-timer`.
-- Open a pull request when finished. The lead reviews and merges.
-- Use design tokens. Do not type colour codes.
-- Mobile-first: design for phones, then add `@media (min-width: 900px)`.
-- No frameworks. HTML, CSS and vanilla JS only.
 
-## Responsive breakpoint
-900px. Below: hamburger and slide-in drawer. 900px and up: sidebar.
-
-## Moving between screens
-One screen at a time on a single page, using the URL hash (`#/quiz`).
-Routes: home, flashcards, quiz, results, decks, review.
-
-## Question format
-{
-  id: 'javascript-123',
-  topic: 'javascript',
-  question: 'Which keyword declares a block-scoped variable?',
-  code: null,                 // optional code snippet shown under the question
-  options: ['var', 'let', 'define', 'static'],   // always 4
-  correctIndex: 1,            // position in options, starting from 0
-  explanation: 'let is limited to the block where it is declared.'
-}
-
-## Flashcard format
-{ id: 'card-js-1', topic: 'javascript', term: 'function', definition: '...' }
-
-## Quiz questions
-- `js/api.js` loads categories and multiple-choice questions from Open Trivia DB.
-- If question loading fails, the quiz shows an error; there is no fallback question bank.
-- Use the "Try Again" action after fixing the connection to retry.
-
-## Loading and error messages (all in js/config.js)
-- Loading: "Getting your questions..."
-- API failure: the user sees the error message and no questions are substituted.
-
-## App memory (js/state.js)
-topic, status, message, source, questions, currentIndex, answers,
-cards, knownCards, timeLimit, secondsLeft, score, finished.
-
-## Score shape
-{ topic, correct, wrong, timeUsedSeconds, date }   // date is an ISO string
-
-## Backend contract (Tasks 11 and 12)
-- POST /api/scores: saves one score (body = score shape)
-- GET /api/scores: returns a list of scores
+- Questions and topics only come from `js/api.js`.
+- No hardcoded questions or topics.
+- Guest progress lives in memory and disappears on refresh.
+- Signed-in progress is saved in Firestore under `users/{uid}`.
+- No localStorage for progress.
+- Colors, spacing and sizes come from `css/tokens.css`.
+- One CSS declaration per line. No comments.

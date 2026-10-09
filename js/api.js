@@ -1,170 +1,154 @@
 import { SETTINGS, MESSAGES } from './config.js';
 
-function shuffle(list) {
-  const copy = [...list];
+let categoriesCache = null;
+let countsCache = null;
+let lastRequestTime = 0;
 
-  for (let i = copy.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-
-  return copy;
-}
-function decodeHtml(value) {
-  if (typeof value !== 'string') return '';
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = value;
-
-  return textarea.value;
+function wait(milliseconds) {
+  return new Promise(function (resolve) {
+    setTimeout(resolve, milliseconds);
+  });
 }
 
-export async function fetchCategories() {
+async function getJson(url) {
   const controller = new AbortController();
-
-  const timer = setTimeout(() => {
+  const timer = setTimeout(function () {
     controller.abort();
   }, SETTINGS.requestTimeoutMs);
 
   try {
-    const response = await fetch(
-      `${SETTINGS.triviaApiBase}/api_category.php`,
-      {
-        signal: controller.signal,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Category request failed: ${response.status}`);
+    const response = await fetch(url, { signal: controller.signal });
+    if (!response.ok && response.status !== 429) {
+      throw new Error('Request failed');
     }
-
-    const data = await response.json();
-
-    if (!data || !Array.isArray(data.trivia_categories)) {
-      throw new Error('Invalid category response');
-    }
-
-    const categories = data.trivia_categories
-      .filter((category) =>
-        category &&
-        Number.isInteger(category.id) &&
-        category.id > 0 &&
-        typeof category.name === 'string' &&
-        decodeHtml(category.name).trim()
-      )
-      .map((category) => ({ id: category.id, name: decodeHtml(category.name) }));
-
-    if (categories.length === 0) throw new Error('Empty category response');
-    return categories;
-  } catch (error) {
-    console.warn('Could not load Open Trivia DB categories:', error);
-    throw error;
+    return await response.json();
   } finally {
     clearTimeout(timer);
   }
 }
 
-function normalizeQuestion(item, categoryId) {
-  if (
-    !item ||
-    typeof item.question !== 'string' || !item.question.trim() ||
-    typeof item.correct_answer !== 'string' ||
-    !Array.isArray(item.incorrect_answers) ||
-    item.incorrect_answers.length !== 3 ||
-    item.incorrect_answers.some((answer) => typeof answer !== 'string')
-  ) return null;
+async function waitForGap() {
+  const passed = Date.now() - lastRequestTime;
+  if (passed < SETTINGS.requestGapMs) {
+    await wait(SETTINGS.requestGapMs - passed);
+  }
+  lastRequestTime = Date.now();
+}
 
-  const options = [
-    ...item.incorrect_answers,
-    item.correct_answer,
-  ].map(decodeHtml);
+async function requestQuestions(url) {
+  let data = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await waitForGap();
+    data = await getJson(url);
+    if (data.response_code !== 5) {
+      return data;
+    }
+  }
+  return data;
+}
 
-  const question = decodeHtml(item.question);
-  const correctAnswer = decodeHtml(item.correct_answer);
+function decode(text) {
+  return decodeURIComponent(text);
+}
 
-  if (
-    !question.trim() ||
-    options.some((option) => !option.trim()) ||
-    new Set(options).size !== 4
-  ) return null;
+function shuffle(list) {
+  for (let i = list.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = list[i];
+    list[i] = list[j];
+    list[j] = temp;
+  }
+}
 
-  const shuffledOptions = shuffle(options);
-  const correctIndex = shuffledOptions.indexOf(correctAnswer);
-
-  if (correctIndex === -1) return null;
+function makeQuestion(item, index) {
+  const options = [];
+  for (let i = 0; i < item.incorrect_answers.length; i++) {
+    options.push(decode(item.incorrect_answers[i]));
+  }
+  const correctAnswer = decode(item.correct_answer);
+  options.push(correctAnswer);
+  shuffle(options);
 
   return {
-    id: `${categoryId}-${crypto.randomUUID()}`,
-    topic: String(categoryId),
-    question,
-    code: null,
-    options: shuffledOptions,
-    correctIndex,
-    explanation: '',
+    id: 'q' + index,
+    question: decode(item.question),
+    options: options,
+    correctIndex: options.indexOf(correctAnswer),
   };
 }
 
-export async function loadQuestions(
-  categoryId,
-  limit = SETTINGS.questionsPerQuiz
-) {
-  const controller = new AbortController();
-
-  const timer = setTimeout(() => {
-    controller.abort();
-  }, SETTINGS.requestTimeoutMs);
-
-  try {
-    const params = new URLSearchParams({
-      amount: String(limit),
-      category: String(categoryId),
-      type: 'multiple',
-    });
-
-    const response = await fetch(
-      `${SETTINGS.triviaApiBase}/api.php?${params}`,
-      {
-        signal: controller.signal,
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Question request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (!data || !Number.isInteger(data.response_code)) {
-      throw new Error('Invalid question response');
-    }
-
-    if (data.response_code !== 0) {
-      throw new Error(
-        `Open Trivia DB response code: ${data.response_code}`
-      );
-    }
-
-    if (!Array.isArray(data.results)) {
-      throw new Error('Invalid question response');
-    }
-
-    if (data.results.length === 0) {
-      throw new Error(MESSAGES.noQuestions);
-    }
-
-    const questions = data.results
-      .map((item) => normalizeQuestion(item, categoryId))
-      .filter(Boolean);
-
-    if (questions.length === 0) {
-      throw new Error(MESSAGES.noQuestions);
-    }
-
-    return questions;
-  } catch (error) {
-    console.warn('Could not load Open Trivia DB questions:', error);
-    throw error;
-  } finally {
-    clearTimeout(timer);
+export async function getCategories() {
+  if (categoriesCache) {
+    return categoriesCache;
   }
+  const data = await getJson(SETTINGS.triviaApiBase + '/api_category.php');
+  categoriesCache = data.trivia_categories;
+  return categoriesCache;
+}
+
+export async function getCategoryCounts() {
+  if (countsCache) {
+    return countsCache;
+  }
+  const counts = {};
+  try {
+    const data = await getJson(SETTINGS.triviaApiBase + '/api_count_global.php');
+    for (const id in data.categories) {
+      counts[id] = data.categories[id].total_num_of_verified_questions;
+    }
+    countsCache = counts;
+  } catch (error) {
+    return {};
+  }
+  return countsCache;
+}
+
+export async function loadQuestions(categoryId, amount, difficulty) {
+  let url =
+    SETTINGS.triviaApiBase +
+    '/api.php?amount=' +
+    amount +
+    '&category=' +
+    categoryId +
+    '&type=multiple&encode=url3986';
+  if (difficulty) {
+    url = url + '&difficulty=' + difficulty;
+  }
+
+  let data = null;
+  try {
+    data = await requestQuestions(url);
+  } catch (error) {
+    throw new Error(MESSAGES.error);
+  }
+
+  if (data.response_code === 1) {
+    throw new Error(MESSAGES.noQuestions);
+  }
+  if (data.response_code !== 0) {
+    throw new Error(MESSAGES.error);
+  }
+
+  const questions = [];
+  try {
+    for (let i = 0; i < data.results.length; i++) {
+      questions.push(makeQuestion(data.results[i], i));
+    }
+  } catch (error) {
+    throw new Error(MESSAGES.error);
+  }
+  return questions;
+}
+
+export async function loadCards(categoryId, amount, difficulty) {
+  const questions = await loadQuestions(categoryId, amount, difficulty);
+  const cards = [];
+  for (let i = 0; i < questions.length; i++) {
+    cards.push({
+      id: questions[i].id,
+      term: questions[i].question,
+      definition: questions[i].options[questions[i].correctIndex],
+    });
+  }
+  return cards;
 }

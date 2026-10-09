@@ -19,76 +19,75 @@
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/shell.css" />
+    <link rel="stylesheet" href="css/screens/home.css" />
+    <link rel="stylesheet" href="css/screens/decks.css" />
+    <link rel="stylesheet" href="css/screens/quiz.css" />
+    <link rel="stylesheet" href="css/screens/results.css" />
+    <link rel="stylesheet" href="css/screens/review.css" />
+    <link rel="stylesheet" href="css/screens/flashcards.css" />
+    <link rel="stylesheet" href="css/screens/progress.css" />
   </head>
   <body>
-    <svg width="0" height="0" style="position: absolute" aria-hidden="true" focusable="false">
-      <symbol id="icon-logo" viewBox="0 0 64 64">
-        <g fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M31 5v4.5M11 10.5l3.5 3.5M51 10.5L47.5 14M3 21l4.5 2.5M59 21l-4.5 2.5" />
-          <path d="M31 17C28 14.5 22.5 14 19.5 17 14 16.5 11.5 21 12.5 25 8 27 7.5 33 10.5 36 8.5 41 11 46.5 15 47 15.5 52 20 55.5 25 54.5 27 57 30 57 31 56" />
-          <path d="M31 17C34 14.5 39.5 14 42.5 17 48 16.5 50.5 21 49.5 25 54 27 54.5 33 51.5 36 53.5 41 51 46.5 47 47 46.5 52 42 55.5 37 54.5 35 57 32 57 31 56" />
-          <path d="M31 17v39" />
-          <path d="M20 24.5l2 2.5M15 34l9.5 3.5M18 44l3.5 2" />
-          <path d="M42 24.5l-2 2.5M47 34l-9.5 3.5M44 44l-3.5 2" />
-        </g>
-      </symbol>
-      <symbol id="icon-home" viewBox="0 0 24 24">
-        <path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z" />
-      </symbol>
-      <symbol id="icon-flashcards" viewBox="0 0 24 24">
-        <rect x="5" y="3" width="14" height="18" rx="3" />
-        <path d="M9 3v18" />
-      </symbol>
-      <symbol id="icon-quiz" viewBox="0 0 24 24">
-        <path d="M9 6h12M9 12h12M9 18h12M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
-      </symbol>
-      <symbol id="icon-results" viewBox="0 0 24 24">
-        <rect x="3" y="13" width="4" height="8" rx="1" />
-        <rect x="10" y="8" width="4" height="13" rx="1" />
-        <rect x="17" y="3" width="4" height="18" rx="1" />
-      </symbol>
-      <symbol id="icon-decks" viewBox="0 0 24 24">
-        <rect x="3" y="3" width="18" height="18" rx="5" />
-        <rect x="8" y="8" width="8" height="8" rx="2" />
-      </symbol>
-      <symbol id="icon-review" viewBox="0 0 24 24">
-        <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" />
-        <circle cx="12" cy="12" r="3" />
-      </symbol>
-      <symbol id="icon-cap" viewBox="0 0 24 24">
-        <path d="M2 9l10-5 10 5-10 5z" />
-        <path d="M6 11.5V16c0 1.5 3 3 6 3s6-1.5 6-3v-4.5M22 9v6" />
-      </symbol>
-    </svg>
-
     <a class="skip-link" href="#screen">Skip to content</a>
 
     <header class="topbar">
-      <div class="topbar-brand">
-        <svg class="brand-logo" aria-hidden="true"><use href="#icon-logo" /></svg>
-        <div>
-          <p class="brand-name">BrainFlip</p>
-          <p class="brand-tagline">Flip it till you know it.</p>
-        </div>
-      </div>
-      <button class="menu-btn" id="menu-btn" aria-label="Menu" aria-expanded="false" aria-controls="sidebar">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+      <button
+        class="menu-btn"
+        id="menu-btn"
+        aria-label="Menu"
+        aria-expanded="false"
+        aria-controls="sidebar"
+      >
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
           <path d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
+      <img
+        class="brand-logo"
+        src="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200860/brain_logo_1.png"
+        alt=""
+        width="32"
+        height="32"
+      />
+      <p class="brand-name">BrainFlip</p>
+      <div class="auth-area" id="auth-area"></div>
     </header>
 
     <div class="scrim" id="scrim" hidden></div>
 
     <aside class="sidebar" id="sidebar" aria-label="Main navigation">
       <div class="brand">
-        <svg class="brand-logo" aria-hidden="true"><use href="#icon-logo" /></svg>
+        <img
+          class="brand-logo"
+          src="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200860/brain_logo_1.png"
+          alt=""
+          width="40"
+          height="40"
+        />
         <div>
           <p class="brand-name">BrainFlip</p>
           <p class="brand-tagline">Flip it till you know it.</p>
         </div>
         <button class="close-btn" id="close-btn" aria-label="Close menu">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+          <svg
+            width="22"
+            height="22"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            aria-hidden="true"
+          >
             <path d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
@@ -96,17 +95,68 @@
 
       <nav aria-label="Screens">
         <ul class="nav-list">
-          <li><a class="nav-link" href="#/home" data-route="home"><svg class="nav-icon" aria-hidden="true"><use href="#icon-home" /></svg><span>Home</span></a></li>
-          <li><a class="nav-link" href="#/flashcards" data-route="flashcards"><svg class="nav-icon" aria-hidden="true"><use href="#icon-flashcards" /></svg><span>Flashcards</span></a></li>
-          <li><a class="nav-link" href="#/quiz" data-route="quiz"><svg class="nav-icon" aria-hidden="true"><use href="#icon-quiz" /></svg><span>Quiz</span></a></li>
-          <li><a class="nav-link" href="#/results" data-route="results"><svg class="nav-icon" aria-hidden="true"><use href="#icon-results" /></svg><span>Results</span></a></li>
-          <li><a class="nav-link" href="#/decks" data-route="decks"><svg class="nav-icon" aria-hidden="true"><use href="#icon-decks" /></svg><span>Decks</span></a></li>
-          <li><a class="nav-link" href="#/review" data-route="review"><svg class="nav-icon" aria-hidden="true"><use href="#icon-review" /></svg><span>Review Answers</span></a></li>
+          <li>
+            <a class="nav-link" href="#/home" data-route="home">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 11l9-8 9 8M5 10v10h14V10" />
+              </svg>
+              <span>Home</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/flashcards" data-route="flashcards">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="3" width="14" height="18" rx="3" />
+              </svg>
+              <span>Flashcards</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/quiz" data-route="quiz">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01" />
+              </svg>
+              <span>Quiz</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/results" data-route="results">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 20v-6M12 20V5M19 20V10" />
+              </svg>
+              <span>Results</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/decks" data-route="decks">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="8" y="3" width="13" height="13" rx="3" />
+                <path d="M16 20H6a3 3 0 0 1-3-3V8" />
+              </svg>
+              <span>Decks</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/review" data-route="review">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+              <span>Review Answers</span>
+            </a>
+          </li>
+          <li>
+            <a class="nav-link" href="#/progress" data-route="progress">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M3 17l6-6 4 4 8-8M15 7h6v6" />
+              </svg>
+              <span>Progress</span>
+            </a>
+          </li>
         </ul>
       </nav>
 
       <div class="keep-going">
-        <svg class="cap-icon" aria-hidden="true"><use href="#icon-cap" /></svg>
         <strong>Keep going!</strong>
         <span>Small steps make big progress.</span>
       </div>

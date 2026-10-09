@@ -1,54 +1,51 @@
-const listeners = new Set();
+import { SETTINGS } from './config.js';
 
-function createInitialState() {
+function createState() {
   return {
-    topic: null,
-    status: 'idle',
-    message: '',
-    source: null,
+    selectedCategory: null,
+    difficulty: '',
+    amount: SETTINGS.questionsPerQuiz,
     questions: [],
-    currentIndex: 0,
     answers: [],
-    cards: [],
-    knownCards: [],
-    timeLimit: 0,
-    secondsLeft: 0,
-    score: 0,
-    finished: false,
+    currentIndex: 0,
     timeUsedSeconds: 0,
-    autoStartTopic: null,
+    finished: false,
+    resultSaved: false,
+    flashCategoryId: null,
+    flashQueue: [],
+    flashKnown: [],
+    flashTotal: 0,
+    flashAgain: 0,
   };
 }
 
-let state = createInitialState();
+let state = createState();
 
 export function getState() {
   return state;
 }
 
-export function setState(patch) {
-  state = { ...state, ...patch };
-  listeners.forEach((listener) => listener(state));
+export function setState(changes) {
+  state = Object.assign({}, state, changes);
 }
 
-export function subscribe(listener) {
-  listeners.add(listener);
-  return () => listeners.delete(listener);
-}
-
-export function resetState() {
-  setState(createInitialState());
-}
-
-export function recordAnswer({ questionId, pickedIndex, correctIndex }) {
-  const isCorrect = pickedIndex === correctIndex;
+export function resetQuiz() {
   setState({
-    answers: [...state.answers, { questionId, pickedIndex, correctIndex, isCorrect }],
-    score: state.score + (isCorrect ? 1 : 0),
+    questions: [],
+    answers: [],
+    currentIndex: 0,
+    timeUsedSeconds: 0,
+    finished: false,
+    resultSaved: false,
   });
 }
 
-export function markCardKnown(cardId) {
-  if (state.knownCards.includes(cardId)) return;
-  setState({ knownCards: [...state.knownCards, cardId] });
+export function resetFlashcards() {
+  setState({
+    flashCategoryId: null,
+    flashQueue: [],
+    flashKnown: [],
+    flashTotal: 0,
+    flashAgain: 0,
+  });
 }

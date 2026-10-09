@@ -1,230 +1,171 @@
-import { getState, setState } from '../state.js';
+import { getState } from '../state.js';
 import { goTo } from '../nav.js';
-import { TOPICS, getTopicData } from '../../data/topics.js';
+import { escapeHtml, getLetter } from '../helpers.js';
+import { ICONS } from '../icons.js';
 
-const STYLESHEET_ID = 'review-styles';
-
-const ICONS = {
-  back: '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>',
-  check:
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"/></svg>',
-  cross:
-    '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-  topic:
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>',
-  chevron:
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>',
-};
-
-function ensureStyles() {
-  if (document.getElementById(STYLESHEET_ID)) return;
-  const link = document.createElement('link');
-  link.id = STYLESHEET_ID;
-  link.rel = 'stylesheet';
-  link.href = new URL('../../css/screens/review.css', import.meta.url).href;
-  document.head.appendChild(link);
+function getItems() {
+  const state = getState();
+  const items = [];
+  for (let i = 0; i < state.questions.length; i++) {
+    const answer = state.answers[i];
+    if (answer) {
+      items.push({ number: i + 1, question: state.questions[i], answer: answer });
+    }
+  }
+  return items;
 }
 
-function escapeHtml(value) {
-  return String(value).replace(
-    /[&<>"']/g,
-    (character) =>
-      ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      })[character],
-  );
+function makeItemHtml(item) {
+  const question = item.question;
+  const answer = item.answer;
+  const number = String(item.number).padStart(2, '0');
+
+  let optionsHtml = '';
+  for (let i = 0; i < question.options.length; i++) {
+    let className = 'review-option';
+    if (i === answer.pickedIndex && answer.isCorrect) {
+      className = 'review-option review-option--correct';
+    } else if (i === answer.pickedIndex) {
+      className = 'review-option review-option--wrong';
+    }
+    optionsHtml += `
+      <li class="${className}">
+        <span class="review-radio"></span>
+        <span>${getLetter(i)}. ${escapeHtml(question.options[i])}</span>
+      </li>
+    `;
+  }
+
+  const correctText = getLetter(question.correctIndex) + '. ' + question.options[question.correctIndex];
+  let resultHtml = '';
+
+  if (answer.isCorrect) {
+    resultHtml = `
+      <div class="review-result review-result--correct">
+        <span class="review-result-icon">${ICONS.check}</span>
+        <div>
+          <strong>Correct</strong>
+          <p>You selected ${getLetter(answer.pickedIndex)}. ${escapeHtml(question.options[answer.pickedIndex])}</p>
+        </div>
+      </div>
+    `;
+  } else if (answer.pickedIndex === -1) {
+    resultHtml = `
+      <div class="review-result review-result--wrong">
+        <span class="review-result-icon">${ICONS.cross}</span>
+        <div>
+          <strong>Time is up</strong>
+          <p>You did not select an answer.</p>
+          <p>The correct answer is ${escapeHtml(correctText)}.</p>
+        </div>
+      </div>
+    `;
+  } else {
+    resultHtml = `
+      <div class="review-result review-result--wrong">
+        <span class="review-result-icon">${ICONS.cross}</span>
+        <div>
+          <strong>Incorrect</strong>
+          <p>You selected ${getLetter(answer.pickedIndex)}. ${escapeHtml(question.options[answer.pickedIndex])}</p>
+          <p>The correct answer is ${escapeHtml(correctText)}.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <li class="review-item">
+      <span class="review-number">${number}</span>
+      <div>
+        <h2 class="review-question">${escapeHtml(question.question)}</h2>
+        <ul class="review-options">${optionsHtml}</ul>
+      </div>
+      ${resultHtml}
+    </li>
+  `;
 }
 
 export function render(root) {
-  ensureStyles();
-  const state = getState();
-  let filter = 'all';
+  const items = getItems();
 
-  function renderView() {
-    const totalQuestions = state.questions.length;
-    const missedQuestions = state.answers.filter((a) => !a.isCorrect).length;
-
-    if (totalQuestions === 0) {
-      root.innerHTML = `
-        <section class="review">
-          <header class="review-header">
-            <div class="review-header-title">
-              <button class="review-back" id="review-back" type="button" aria-label="Back to results">${ICONS.back}</button>
-              <div>
-                <h1>Review Answers</h1>
-                <p class="review-subtitle">See how you did and learn from your mistakes.</p>
-              </div>
-            </div>
-          </header>
-          <div class="card review-empty">
-            <p>No quiz data found. Take a quiz first!</p>
-            <button class="btn btn--primary" id="review-go-home" style="margin-top: var(--space-4);">Go Home</button>
-          </div>
-        </section>
-      `;
-      root.querySelector('#review-back').addEventListener('click', () => goTo('results'));
-      root.querySelector('#review-go-home').addEventListener('click', () => goTo('home'));
-      return;
-    }
-
-    const filteredAnswers = state.answers.filter((a) => filter === 'all' || !a.isCorrect);
-
-    const cardsMarkup = filteredAnswers
-      .map((answer) => {
-        const question = state.questions.find((q) => q.id === answer.questionId);
-        if (!question) return '';
-
-        const questionNum = String(state.questions.indexOf(question) + 1).padStart(2, '0');
-        const optionLabels = ['A', 'B', 'C', 'D'];
-        const codeMarkup = question.code
-          ? `<div class="review-code">${escapeHtml(question.code)}</div>`
-          : '';
-
-        const optionsMarkup = question.options
-          .map((opt, idx) => {
-            let stateClass = '';
-            if (idx === answer.correctIndex) stateClass = 'is-correct';
-            else if (idx === answer.pickedIndex) stateClass = 'is-wrong';
-
-            return `
-          <div class="review-option ${stateClass}">
-            <div class="review-radio"></div>
-            <span>${optionLabels[idx]}. ${escapeHtml(opt)}</span>
-          </div>
-        `;
-          })
-          .join('');
-
-        const resultClass = answer.isCorrect ? 'review-result--correct' : 'review-result--wrong';
-        const resultIcon = answer.isCorrect ? ICONS.check : ICONS.cross;
-        const resultTitle = answer.isCorrect ? 'Correct' : 'Incorrect';
-
-        const choiceText = answer.isCorrect
-          ? `You selected <strong>${optionLabels[answer.pickedIndex]}. ${escapeHtml(question.options[answer.pickedIndex])}</strong>`
-          : `You selected <strong style="color: var(--color-wrong-text);">${optionLabels[answer.pickedIndex]}. ${escapeHtml(question.options[answer.pickedIndex])}</strong><br>The correct answer is <strong>${optionLabels[answer.correctIndex]}. ${escapeHtml(question.options[answer.correctIndex])}</strong>`;
-
-        return `
-        <div class="review-card">
-          <div class="review-card-main">
-            <div class="review-card-header">
-              <span class="review-number">${questionNum}</span>
-              <div class="review-question-block">
-                <p class="review-question">${escapeHtml(question.question)}</p>
-                ${codeMarkup}
-                <div class="review-options">
-                  ${optionsMarkup}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="review-result ${resultClass}">
-            <div class="review-result-icon">${resultIcon}</div>
-            <div>
-              <p class="review-result-title">${resultTitle}</p>
-              <p class="review-result-choice">${choiceText}</p>
-              ${question.explanation ? `<p class="review-result-explanation">${escapeHtml(question.explanation)}</p>` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-      })
-      .join('');
-
-    const topicData = state.topic ? getTopicData(state.topic.id) : null;
-    const topicIconMarkup = topicData
-      ? `<span class="review-topic-icon" style="background: ${topicData.tile}; color: ${topicData.color};"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${topicData.path}</svg></span>`
-      : ICONS.topic;
-
-    const dropdownMarkup = TOPICS.map(
-      (t) => `
-      <li role="option" data-id="${t.id}" data-label="${escapeHtml(t.label)}">
-        <span class="review-topic-icon" style="background: ${t.tile}; color: ${t.color};">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">${t.path}</svg>
-        </span>
-        ${escapeHtml(t.label)}
-      </li>
-    `,
-    ).join('');
-
+  if (items.length === 0) {
     root.innerHTML = `
-      <section class="review">
-        <header class="review-header">
-          <div class="review-header-title">
-            <button class="review-back" id="review-back" type="button" aria-label="Back to results">${ICONS.back}</button>
-            <div>
-              <h1>Review Answers</h1>
-              <p class="review-subtitle">See how you did and learn from your mistakes.</p>
-            </div>
-          </div>
-          
-          <div class="review-dropdown-container">
-            <button class="review-topic-label" id="review-topic-btn" type="button" aria-haspopup="listbox" aria-expanded="false">
-              ${topicIconMarkup}
-              <span>${state.topic ? escapeHtml(state.topic.label) : 'Quiz'}</span>
-              <span class="review-topic-chevron">${ICONS.chevron}</span>
-            </button>
-            <ul class="review-dropdown" id="review-dropdown-list" role="listbox" hidden>
-              ${dropdownMarkup}
-            </ul>
-          </div>
-        </header>
-
-        <div class="review-filters" role="group" aria-label="Filter answers">
-          <button class="review-filter" data-filter="all" aria-pressed="${filter === 'all'}">
-            All <span class="review-badge">${totalQuestions}</span>
-          </button>
-          <button class="review-filter" data-filter="missed" aria-pressed="${filter === 'missed'}">
-            Missed <span class="review-badge">${missedQuestions}</span>
-          </button>
-        </div>
-
-        <div class="review-list">
-          ${cardsMarkup || '<p class="review-empty">No missed questions!</p>'}
-        </div>
+      <section class="review review-empty">
+        <h1>Review Answers</h1>
+        <p>You have no answers to review yet. Take a quiz first.</p>
+        <button class="btn btn--primary" id="review-start" type="button">Start a quiz</button>
       </section>
     `;
-
-    // Dropdown Logic
-    const dropdownBtn = root.querySelector('#review-topic-btn');
-    const dropdownList = root.querySelector('#review-dropdown-list');
-
-    dropdownBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isHidden = dropdownList.hidden;
-      dropdownList.hidden = !isHidden;
-      dropdownBtn.setAttribute('aria-expanded', String(!isHidden));
+    root.querySelector('#review-start').addEventListener('click', function () {
+      goTo('home');
     });
-
-    document.addEventListener('click', (e) => {
-      if (!dropdownBtn.contains(e.target) && dropdownList) {
-        dropdownList.hidden = true;
-        dropdownBtn.setAttribute('aria-expanded', 'false');
-      }
-    });
-
-    // Route to Flashcards
-    dropdownList.querySelectorAll('li').forEach((item) => {
-      item.addEventListener('click', () => {
-        const id = Number(item.dataset.id);
-        const label = item.dataset.label;
-        setState({ topic: { id, label } });
-        goTo('flashcards');
-      });
-    });
-
-    root.querySelector('#review-back').addEventListener('click', () => goTo('results'));
-
-    root.querySelectorAll('.review-filter').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        filter = e.currentTarget.dataset.filter;
-        renderView();
-      });
-    });
+    return null;
   }
 
-  renderView();
+  const missed = items.filter(function (item) {
+    return !item.answer.isCorrect;
+  });
+  let tab = 'all';
+
+  root.innerHTML = `
+    <section class="review">
+      <header class="review-header">
+        <button class="review-back" id="review-back" type="button" aria-label="Back to results">
+          ${ICONS.back}
+        </button>
+        <div>
+          <h1>Review Answers</h1>
+          <p class="review-subtitle">See how you did and learn from your mistakes.</p>
+        </div>
+      </header>
+      <span class="review-topic">${escapeHtml(getState().selectedCategory.name)}</span>
+      <div class="review-tabs">
+        <button class="review-tab" id="tab-all" type="button" aria-pressed="true">
+          All <span class="review-count">${items.length}</span>
+        </button>
+        <button class="review-tab" id="tab-missed" type="button" aria-pressed="false">
+          Missed <span class="review-count">${missed.length}</span>
+        </button>
+      </div>
+      <ul class="review-list" id="review-list"></ul>
+    </section>
+  `;
+
+  const list = root.querySelector('#review-list');
+  const allTab = root.querySelector('#tab-all');
+  const missedTab = root.querySelector('#tab-missed');
+
+  function showList() {
+    let shown = items;
+    if (tab === 'missed') {
+      shown = missed;
+    }
+
+    let html = '';
+    for (let i = 0; i < shown.length; i++) {
+      html += makeItemHtml(shown[i]);
+    }
+    if (shown.length === 0) {
+      html = '<li><p>You did not miss any questions. Great work!</p></li>';
+    }
+    list.innerHTML = html;
+
+    allTab.setAttribute('aria-pressed', String(tab === 'all'));
+    missedTab.setAttribute('aria-pressed', String(tab === 'missed'));
+  }
+
+  allTab.addEventListener('click', function () {
+    tab = 'all';
+    showList();
+  });
+  missedTab.addEventListener('click', function () {
+    tab = 'missed';
+    showList();
+  });
+  root.querySelector('#review-back').addEventListener('click', function () {
+    goTo('results');
+  });
+
+  showList();
+  return null;
 }
