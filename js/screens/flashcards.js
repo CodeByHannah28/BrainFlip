@@ -4,11 +4,69 @@ import { getState, setState, resetFlashcards } from '../state.js';
 import { saveFlashcardResult } from '../database.js';
 import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { TOPICS } from '../../data/topics.js';
 
 export function render(root) {
   let active = true;
   let categories = [];
   let flipped = false;
+  let showAll = false;
+
+  function getTopicLabel(category) {
+    for (let i = 0; i < TOPICS.length; i++) {
+      if (TOPICS[i].id === category.id) {
+        return TOPICS[i].label;
+      }
+    }
+    return category.name;
+  }
+
+  function getMainCategories() {
+    const main = [];
+    for (let i = 0; i < TOPICS.length; i++) {
+      for (let j = 0; j < categories.length; j++) {
+        if (categories[j].id === TOPICS[i].id) {
+          main.push(categories[j]);
+        }
+      }
+    }
+    return main;
+  }
+
+  function isMainTopic(id) {
+    for (let i = 0; i < TOPICS.length; i++) {
+      if (TOPICS[i].id === id) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  function getVisibleCategories() {
+    const main = getMainCategories();
+    const others = [];
+    for (let i = 0; i < categories.length; i++) {
+      if (!isMainTopic(categories[i].id)) {
+        others.push(categories[i]);
+      }
+    }
+
+    if (main.length === 0) {
+      return { visible: categories, hiddenCount: 0 };
+    }
+    if (showAll) {
+      return { visible: main.concat(others), hiddenCount: others.length };
+    }
+
+    const selectedId = getState().selectedCategory.id;
+    let visible = main;
+    for (let i = 0; i < others.length; i++) {
+      if (others[i].id === selectedId) {
+        visible = main.concat([others[i]]);
+      }
+    }
+    return { visible: visible, hiddenCount: others.length };
+  }
 
   async function start() {
     showLoading(root, MESSAGES.loadingTopics);
@@ -23,9 +81,18 @@ export function render(root) {
     if (!active) {
       return;
     }
+    if (categories.length === 0) {
+      showError(root, 'No topics found', MESSAGES.topicsError, start);
+      return;
+    }
 
     if (!getState().selectedCategory) {
-      setState({ selectedCategory: { id: categories[0].id, name: categories[0].name } });
+      const main = getMainCategories();
+      let first = categories[0];
+      if (main.length > 0) {
+        first = main[0];
+      }
+      setState({ selectedCategory: { id: first.id, name: first.name } });
     }
 
     const state = getState();
@@ -65,17 +132,6 @@ export function render(root) {
   }
 
   function drawPage() {
-    const state = getState();
-
-    let chipsHtml = '';
-    for (let i = 0; i < categories.length; i++) {
-      let className = 'chip';
-      if (categories[i].id === state.selectedCategory.id) {
-        className = 'chip chip--active';
-      }
-      chipsHtml += `<button class="${className}" type="button" data-id="${categories[i].id}" data-name="${escapeHtml(categories[i].name)}">${escapeHtml(categories[i].name)}</button>`;
-    }
-
     root.innerHTML = `
       <section class="flash">
         <div class="flash-head">
@@ -85,16 +141,49 @@ export function render(root) {
           </div>
           <div class="flash-progress" id="flash-progress"></div>
         </div>
-        <div class="flash-chips" id="flash-chips">${chipsHtml}</div>
+        <div class="flash-chips" id="flash-chips"></div>
         <div id="flash-body"></div>
       </section>
     `;
 
-    const chips = root.querySelectorAll('#flash-chips .chip');
+    drawChips();
+    drawProgress();
+  }
+
+  function drawChips() {
+    const state = getState();
+    const result = getVisibleCategories();
+    let chipsHtml = '';
+
+    for (let i = 0; i < result.visible.length; i++) {
+      const category = result.visible[i];
+      const selected = category.id === state.selectedCategory.id;
+      let className = 'chip';
+      if (selected) {
+        className = 'chip chip--active';
+      }
+      chipsHtml += `<button class="${className}" type="button" data-id="${category.id}" data-name="${escapeHtml(category.name)}" aria-pressed="${selected}">${escapeHtml(getTopicLabel(category))}</button>`;
+    }
+
+    if (result.hiddenCount > 0) {
+      let moreLabel = '+ ' + result.hiddenCount + ' more';
+      if (showAll) {
+        moreLabel = 'Show fewer';
+      }
+      chipsHtml += `<button class="chip chip--more" id="flash-more" type="button" aria-expanded="${showAll}">${moreLabel}</button>`;
+    }
+
+    const box = root.querySelector('#flash-chips');
+    box.innerHTML = chipsHtml;
+
+    const chips = box.querySelectorAll('.chip[data-id]');
     for (let i = 0; i < chips.length; i++) {
       chips[i].addEventListener('click', handleChipClick);
     }
-    drawProgress();
+    const moreButton = box.querySelector('#flash-more');
+    if (moreButton) {
+      moreButton.addEventListener('click', handleMoreClick);
+    }
   }
 
   function drawProgress() {
@@ -105,7 +194,8 @@ export function render(root) {
     }
 
     root.querySelector('#flash-progress').innerHTML = `
-      <div>
+      <span class="flash-progress-icon">${ICONS.deck}</span>
+      <div class="flash-progress-text">
         <strong>Deck Progress</strong>
         <span>${state.flashKnown.length} / ${state.flashTotal} cards</span>
       </div>
@@ -120,6 +210,15 @@ export function render(root) {
     setState({ selectedCategory: { id: Number(button.dataset.id), name: button.dataset.name } });
     resetFlashcards();
     loadDeck();
+  }
+
+  function handleMoreClick() {
+    showAll = !showAll;
+    drawChips();
+    const moreButton = root.querySelector('#flash-more');
+    if (moreButton) {
+      moreButton.focus();
+    }
   }
 
   function drawBody() {
@@ -146,25 +245,32 @@ export function render(root) {
     const card = state.flashQueue[0];
     let flippedClass = '';
     if (flipped) {
-      flippedClass = 'is-flipped';
+      flippedClass = 'flipped';
+    }
+    let longClass = '';
+    if (card.term.length > 60) {
+      longClass = ' flip-text--long';
+    }
+    let answerLongClass = '';
+    if (card.definition.length > 60) {
+      answerLongClass = ' flip-answer--long';
     }
 
     body.innerHTML = `
       <div class="flash-stage">
-        <button class="flip-card ${flippedClass}" id="flip-card" type="button">
-          <span class="flip-card-inner">
-            <span class="flip-face flip-front">
-              <span class="flip-label">${escapeHtml(state.selectedCategory.name)}</span>
-              <span class="flip-text">${escapeHtml(card.term)}</span>
+        <div class="flip-scene">
+          <div class="flip-card ${flippedClass}" id="flip-card" role="button" tabindex="0">
+            <div class="flip-face flip-front">
+              <span class="flip-label">${escapeHtml(getTopicLabel(state.selectedCategory))}</span>
+              <span class="flip-text${longClass}">${escapeHtml(card.term)}</span>
+              <span class="flip-line"></span>
               <span class="flip-hint">Tap the card to see the answer</span>
-            </span>
-            <span class="flip-face flip-back">
-              <span class="flip-label">Answer</span>
-              <span class="flip-text">${escapeHtml(card.definition)}</span>
-              <span class="flip-hint">Tap the card to flip back</span>
-            </span>
-          </span>
-        </button>
+            </div>
+            <div class="flip-face flip-back">
+              <span class="flip-answer${answerLongClass}">${escapeHtml(card.definition)}</span>
+            </div>
+          </div>
+        </div>
         <button class="flash-arrow flash-prev" id="prev-card" type="button" aria-label="Previous card">
           ${ICONS.arrowLeft}
         </button>
@@ -183,6 +289,7 @@ export function render(root) {
     `;
 
     body.querySelector('#flip-card').addEventListener('click', flipCard);
+    body.querySelector('#flip-card').addEventListener('keydown', handleCardKey);
     body.querySelector('#prev-card').addEventListener('click', previousCard);
     body.querySelector('#next-card').addEventListener('click', nextCard);
     body.querySelector('#review-again').addEventListener('click', reviewAgain);
@@ -191,7 +298,14 @@ export function render(root) {
 
   function flipCard() {
     flipped = !flipped;
-    root.querySelector('#flip-card').classList.toggle('is-flipped');
+    root.querySelector('#flip-card').classList.toggle('flipped');
+  }
+
+  function handleCardKey(event) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      flipCard();
+    }
   }
 
   function nextCard() {

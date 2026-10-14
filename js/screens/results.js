@@ -63,13 +63,75 @@ export function render(root) {
   if (!summary) {
     root.innerHTML = `
       <section class="results results-empty">
-        <h1>Quiz Results</h1>
-        <p>You have no results yet. Take a quiz to see how you did.</p>
-        <button class="btn btn--primary" id="results-start" type="button">Start a quiz</button>
+        <header class="results-header">
+          <button class="results-back" id="results-back" type="button" aria-label="Back to home">
+            ${ICONS.back}
+          </button>
+          <div>
+            <h1>Quiz Results</h1>
+            <p class="results-subtitle">Your scores will show up here.</p>
+          </div>
+        </header>
+
+        <div class="results-empty-card card">
+          <img
+            class="results-empty-img"
+            src="https://res.cloudinary.com/j7xyduzb/image/upload/v1791200847/Tag_1.png"
+            alt=""
+            width="240"
+            height="166"
+          />
+          <div class="results-empty-copy">
+            <h2>No results yet</h2>
+            <p>Take a quiz and your score, time and answers will show up here.</p>
+          </div>
+          <div class="results-empty-actions">
+            <button class="btn btn--primary" id="results-start" type="button">
+              ${ICONS.play} Start a quiz
+            </button>
+            <button class="btn btn--outline" id="results-cards" type="button">
+              ${ICONS.deck} Study flashcards
+            </button>
+          </div>
+        </div>
+
+        <ul class="results-empty-tiles">
+          <li class="results-empty-tile">
+            <span class="results-empty-tile-icon">${ICONS.trophy}</span>
+            <div>
+              <strong>Your score</strong>
+              <span>See how many you got right</span>
+            </div>
+          </li>
+          <li class="results-empty-tile">
+            <span class="results-empty-tile-icon">${ICONS.clock}</span>
+            <div>
+              <strong>Time used</strong>
+              <span>See how long it took</span>
+            </div>
+          </li>
+          <li class="results-empty-tile">
+            <span class="results-empty-tile-icon">${ICONS.eye}</span>
+            <div>
+              <strong>Review answers</strong>
+              <span>See what you missed</span>
+            </div>
+          </li>
+        </ul>
       </section>
     `;
+    const emptyImage = root.querySelector('.results-empty-img');
+    emptyImage.addEventListener('error', function () {
+      emptyImage.hidden = true;
+    });
+    root.querySelector('#results-back').addEventListener('click', function () {
+      goTo('home');
+    });
     root.querySelector('#results-start').addEventListener('click', function () {
       goTo('home');
+    });
+    root.querySelector('#results-cards').addEventListener('click', function () {
+      goTo('flashcards');
     });
     return null;
   }

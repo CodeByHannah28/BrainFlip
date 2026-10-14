@@ -89,15 +89,34 @@ export function render(root) {
   const items = getItems();
 
   if (items.length === 0) {
-    root.innerHTML = `
+        root.innerHTML = `
       <section class="review review-empty">
-        <h1>Review Answers</h1>
-        <p>You have no answers to review yet. Take a quiz first.</p>
-        <button class="btn btn--primary" id="review-start" type="button">Start a quiz</button>
+        <div class="review-empty-card">
+          <span class="review-empty-icon">${ICONS.eye}</span>
+          <p class="review-empty-kicker">Review Answers</p>
+          <h1 class="review-empty-title">No answers to review yet</h1>
+          <p class="review-empty-text">
+            Finish a quiz and every question you answered will show up here, so you can learn from your mistakes.
+          </p>
+          <ol class="review-empty-steps">
+            <li class="review-empty-step"><strong>1</strong><span>Take a quiz</span></li>
+            <li class="review-empty-step"><strong>2</strong><span>See your score</span></li>
+            <li class="review-empty-step"><strong>3</strong><span>Review answers</span></li>
+          </ol>
+          <div class="review-empty-actions">
+            <button class="btn btn--primary" id="review-start" type="button">
+              ${ICONS.play} Start a quiz
+            </button>
+            <button class="btn btn--outline" id="review-decks" type="button">Choose a deck</button>
+          </div>
+        </div>
       </section>
     `;
     root.querySelector('#review-start').addEventListener('click', function () {
       goTo('home');
+    });
+    root.querySelector('#review-decks').addEventListener('click', function () {
+      goTo('decks');
     });
     return null;
   }

@@ -4,6 +4,23 @@ import { getState, setState, resetQuiz } from '../state.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, formatClock, getLetter, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { TOPICS, getTopicData } from '../../data/topics.js';
+
+function getTopicLabel(category) {
+  for (let i = 0; i < TOPICS.length; i++) {
+    if (TOPICS[i].id === category.id) {
+      return TOPICS[i].label;
+    }
+  }
+  return category.name;
+}
+
+function getDifficultyLabel(value) {
+  if (!value) {
+    return 'Any';
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 export function render(root) {
   let active = true;
@@ -18,13 +35,63 @@ export function render(root) {
 
   function showNoTopic() {
     root.innerHTML = `
-      <section class="quiz card">
-        <h1>Quiz</h1>
-        <p>Choose a topic on the home screen to start a quiz.</p>
-        <button class="btn btn--primary" id="choose-topic" type="button">Choose a topic</button>
+      <section class="quiz-start">
+        <div class="quiz-start-card">
+          <span class="quiz-start-icon quiz-start-icon--plain">${ICONS.deck}</span>
+          <h1 class="quiz-start-title">Choose a topic</h1>
+          <p class="quiz-start-text">Pick a topic on the home screen to start a quiz.</p>
+          <div class="quiz-start-actions quiz-start-actions--single">
+            <button class="btn btn--primary" id="choose-topic" type="button">Choose a topic</button>
+          </div>
+        </div>
       </section>
     `;
     root.querySelector('#choose-topic').addEventListener('click', function () {
+      goTo('home');
+    });
+  }
+
+  function showIntro() {
+    const state = getState();
+    const category = state.selectedCategory;
+    const data = getTopicData(category.id);
+
+    root.innerHTML = `
+      <section class="quiz-start">
+        <div class="quiz-start-card">
+          <span class="quiz-start-icon" style="background: ${data.tile}; color: ${data.color};">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${data.path}</svg>
+          </span>
+          <p class="quiz-start-kicker">Quiz</p>
+          <h1 class="quiz-start-title">${escapeHtml(getTopicLabel(category))}</h1>
+          <p class="quiz-start-text">
+            Answer each question before the timer runs out. You can go back to earlier questions.
+          </p>
+          <ul class="quiz-start-facts">
+            <li class="quiz-start-fact">
+              <strong>${state.amount}</strong>
+              <span>Questions</span>
+            </li>
+            <li class="quiz-start-fact">
+              <strong>${SETTINGS.secondsPerQuestion}s</strong>
+              <span>Per question</span>
+            </li>
+            <li class="quiz-start-fact">
+              <strong>${getDifficultyLabel(state.difficulty)}</strong>
+              <span>Difficulty</span>
+            </li>
+          </ul>
+          <div class="quiz-start-actions">
+            <button class="btn btn--primary" id="begin-quiz" type="button">
+              ${ICONS.play} Start Quiz
+            </button>
+            <button class="btn btn--outline" id="change-topic" type="button">Change topic</button>
+          </div>
+        </div>
+      </section>
+    `;
+    root.querySelector('#begin-quiz').addEventListener('click', startQuiz);
+    root.querySelector('#change-topic').addEventListener('click', function () {
       goTo('home');
     });
   }
@@ -209,7 +276,7 @@ export function render(root) {
   } else if (state.questions.length > 0 && !state.finished) {
     showQuestion();
   } else {
-    startQuiz();
+    showIntro();
   }
 
   return function () {

@@ -324,6 +324,10 @@ body.nav-open .sidebar {
     color: var(--color-timer-text);
   }
 
+  .keep-going svg {
+    color: var(--color-brand);
+  }
+
   .screen {
     padding: 70px var(--space-7) var(--space-6);
   }

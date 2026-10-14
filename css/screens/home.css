@@ -1,4 +1,6 @@
 .home {
+  container-type: inline-size;
+  container-name: home;
   display: grid;
   gap: var(--space-5);
 }
@@ -29,6 +31,7 @@
 
 .home-art {
   position: relative;
+  display: none;
   flex: none;
   width: 120px;
   height: 120px;
@@ -69,14 +72,8 @@
 
 .topic-grid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
-
-      grid-template-columns: 1fr 1fr;
-    height: 42vh;
-    overflow-x: auto;
-    border: 2px solid var(--color-brand);
-    padding:10px ;
-    border-radius: 30px;
 }
 
 .topic-card {
@@ -110,27 +107,6 @@
   width: 48px;
   height: 48px;
   border-radius: var(--radius-md);
-  color: var(--color-brand);
-}
-
-.tint-0 {
-  background: var(--color-peach-bg);
-}
-
-.tint-1 {
-  background: var(--color-blue-bg);
-}
-
-.tint-2 {
-  background: var(--color-purple-bg);
-}
-
-.tint-3 {
-  background: var(--color-green-bg);
-}
-
-.tint-4 {
-  background: var(--color-yellow-bg);
 }
 
 .topic-text {
@@ -141,6 +117,7 @@
 
 .topic-name {
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .topic-count {
@@ -163,19 +140,44 @@
   color: var(--color-white);
 }
 
+.topic-more {
+  justify-self: start;
+  min-height: 44px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-brand);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.topic-more:hover {
+  background: var(--color-timer-bg);
+}
+
+/* The topic grid and the "show all" button sit in one block */
+#home-content {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* ---------- Quiz options ---------- */
 .home-options {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-3);
-      margin-top: 3vh;
 }
 
-.home-options .field {
-  flex: 1 1 160px;
+.home-options .field select {
+  width: 100%;
 }
 
+/* ---------- Buttons ---------- */
 .home-actions {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--space-3);
 }
 
@@ -190,15 +192,28 @@
   gap: var(--space-3);
 }
 
-@media (min-width: 900px) {
-  .home-hero {
-    align-items: flex-start;
-   
-        margin-top: -9vh;
-        height: 19vh;
+/* ---------- Bigger Home area ---------- */
+@container home (min-width: 380px) {
+  .home-art {
+    display: block;
+  }
+}
 
+@container home (min-width: 520px) {
+  .home {
+    gap: var(--space-6);
   }
 
+  .topic-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .home-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@container home (min-width: 760px) {
   .home-title {
     font-size: var(--text-3xl);
   }
@@ -226,14 +241,4 @@
     width: 72px;
     height: 72px;
   }
-
-  .topic-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .home-actions {
-    grid-template-columns: 1fr 1fr;
-        margin-top: 1vh;
-  }
 }
-

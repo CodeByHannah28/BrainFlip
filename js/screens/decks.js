@@ -1,9 +1,24 @@
 import { getCategories, getCategoryCounts } from '../api.js';
-import { MESSAGES } from '../config.js';
+import { SETTINGS, MESSAGES } from '../config.js';
 import { setState, resetQuiz, resetFlashcards } from '../state.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { TOPICS, getTopicData } from '../../data/topics.js';
+
+const OTHER_TINTS = [
+  'var(--color-peach-bg)',
+  'var(--color-blue-bg)',
+  'var(--color-purple-bg)',
+  'var(--color-green-bg)',
+  'var(--color-yellow-bg)',
+];
+
+const CARDS_ICON =
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="3" width="13" height="13" rx="3" /><path d="M16 20H6a3 3 0 0 1-3-3V8" /></svg>';
+
+const QUESTIONS_ICON =
+  '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 0 1 5 .5c0 1.5-2.5 2-2.5 3.5M12 17h.01" /></svg>';
 
 function getGroup(name) {
   const parts = name.split(':');
@@ -13,17 +28,36 @@ function getGroup(name) {
   return 'Other';
 }
 
+function getShortName(name) {
+  const parts = name.split(':');
+  if (parts.length > 1) {
+    return parts.slice(1).join(':').trim();
+  }
+  return name;
+}
+
+function findTopic(id) {
+  for (let i = 0; i < TOPICS.length; i++) {
+    if (TOPICS[i].id === id) {
+      return TOPICS[i];
+    }
+  }
+  return null;
+}
+
 export function render(root) {
   let active = true;
   let categories = [];
   let counts = {};
-  let selectedGroup = 'All';
+  let selectedFilter = 'all';
 
   root.innerHTML = `
     <section class="decks">
-      <p class="decks-eyebrow">Choose your deck</p>
-      <h1 class="decks-title">Pick a subject to get started</h1>
-      <p class="decks-subtitle">Select a deck to start a quiz or study flashcards for that topic.</p>
+      <header class="decks-header">
+        <p class="decks-eyebrow">Choose your deck</p>
+        <h1 class="decks-title">Pick a subject to get started</h1>
+        <p class="decks-subtitle">Select a deck to start a quiz or study flashcards for that topic.</p>
+      </header>
       <div id="decks-content"></div>
     </section>
   `;
@@ -46,90 +80,143 @@ export function render(root) {
     }
   }
 
-  function getGroups() {
-    const groups = ['All'];
-    for (let i = 0; i < categories.length; i++) {
-      const group = getGroup(categories[i].name);
-      if (!groups.includes(group)) {
-        groups.push(group);
+  function getMainCategories() {
+    const main = [];
+    for (let i = 0; i < TOPICS.length; i++) {
+      for (let j = 0; j < categories.length; j++) {
+        if (categories[j].id === TOPICS[i].id) {
+          main.push(categories[j]);
+        }
       }
     }
-    return groups;
+    return main;
+  }
+
+  function getOtherCategories() {
+    const others = [];
+    for (let i = 0; i < categories.length; i++) {
+      if (!findTopic(categories[i].id)) {
+        others.push(categories[i]);
+      }
+    }
+    return others;
+  }
+
+  function getFilters(main, others) {
+    const filters = [{ key: 'all', label: 'All' }];
+    for (let i = 0; i < main.length; i++) {
+      filters.push({ key: String(main[i].id), label: findTopic(main[i].id).label });
+    }
+    if (others.length > 0) {
+      filters.push({ key: 'more', label: 'More topics' });
+    }
+    return filters;
+  }
+
+  function getVisible(main, others) {
+    if (selectedFilter === 'all') {
+      return main.length > 0 ? main : categories;
+    }
+    if (selectedFilter === 'more') {
+      return others;
+    }
+    return main.filter(function (category) {
+      return String(category.id) === selectedFilter;
+    });
+  }
+
+  function cardHtml(category, position) {
+    const topic = findTopic(category.id);
+    const data = getTopicData(category.id);
+    const group = getGroup(category.name);
+
+    let name = getShortName(category.name);
+    let description = group === 'Other' ? 'A mix of trivia questions.' : group + ' trivia questions.';
+    let tint = OTHER_TINTS[position % OTHER_TINTS.length];
+    let color = 'var(--color-brand)';
+
+    if (topic) {
+      name = topic.label;
+      description = topic.description;
+      tint = data.tile;
+      color = data.color;
+    }
+
+    let questionsHtml = '';
+    if (typeof counts[category.id] === 'number') {
+      questionsHtml = `<span class="deck-stat">${QUESTIONS_ICON}${counts[category.id]} questions</span>`;
+    }
+
+    return `
+      <article class="deck-card" style="--deck-tint: ${tint}; --deck-color: ${color};">
+        <span class="deck-icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${data.path}</svg>
+        </span>
+        <div class="deck-body">
+          <h2 class="deck-name">${escapeHtml(name)}</h2>
+          <p class="deck-description">${escapeHtml(description)}</p>
+        </div>
+        <div class="deck-footer">
+          <p class="deck-stats">
+            <span class="deck-stat">${CARDS_ICON}${SETTINGS.questionsPerQuiz} cards</span>
+            ${questionsHtml}
+          </p>
+          <div class="deck-actions">
+            <button class="deck-action" type="button" data-action="cards" data-id="${category.id}" aria-label="Study ${escapeHtml(name)} flashcards" title="Study flashcards">${ICONS.deck}</button>
+            <button class="deck-action deck-action--quiz" type="button" data-action="quiz" data-id="${category.id}" aria-label="Start ${escapeHtml(name)} quiz" title="Start quiz">${ICONS.arrowRight}</button>
+          </div>
+        </div>
+      </article>
+    `;
   }
 
   function showDecks() {
-    const groups = getGroups();
+    const main = getMainCategories();
+    const others = getOtherCategories();
+    const filters = getFilters(main, others);
+    const visible = getVisible(main, others);
 
     let chipsHtml = '';
-    for (let i = 0; i < groups.length; i++) {
+    for (let i = 0; i < filters.length; i++) {
       let className = 'chip';
-      if (groups[i] === selectedGroup) {
+      if (filters[i].key === selectedFilter) {
         className = 'chip chip--active';
       }
-      chipsHtml += `<button class="${className}" type="button" data-group="${escapeHtml(groups[i])}">${escapeHtml(groups[i])}</button>`;
+      chipsHtml += `<button class="${className}" type="button" data-filter="${filters[i].key}">${escapeHtml(filters[i].label)}</button>`;
     }
 
     let cardsHtml = '';
-    for (let i = 0; i < categories.length; i++) {
-      const category = categories[i];
-      const group = getGroup(category.name);
-      if (selectedGroup !== 'All' && group !== selectedGroup) {
-        continue;
-      }
-
-      let countText = '';
-      if (typeof counts[category.id] === 'number') {
-        countText = counts[category.id] + ' questions available';
-      }
-
-      cardsHtml += `
-        <article class="deck-card tint-${i % 5}">
-          <span class="deck-icon">${ICONS.deck}</span>
-          <div>
-            <h2 class="deck-name">${escapeHtml(category.name)}</h2>
-            <p class="deck-group">${escapeHtml(group)}</p>
-            <p class="deck-count">${countText}</p>
-          </div>
-          <div class="deck-actions">
-            <button class="btn btn--primary" type="button" data-action="quiz" data-id="${category.id}">Quiz</button>
-            <button class="btn btn--outline" type="button" data-action="cards" data-id="${category.id}">Flashcards</button>
-          </div>
-        </article>
-      `;
+    for (let i = 0; i < visible.length; i++) {
+      cardsHtml += cardHtml(visible[i], i);
     }
 
     content.innerHTML = `
-      <div class="chip-row">${chipsHtml}</div>
+      <div class="chip-row decks-chips">${chipsHtml}</div>
       <div class="deck-grid">${cardsHtml}</div>
     `;
-
-    const chips = content.querySelectorAll('.chip');
-    for (let i = 0; i < chips.length; i++) {
-      chips[i].addEventListener('click', handleChipClick);
-    }
-
-    const buttons = content.querySelectorAll('.deck-actions button');
-    for (let i = 0; i < buttons.length; i++) {
-      buttons[i].addEventListener('click', handleDeckClick);
-    }
   }
 
-  function handleChipClick(event) {
-    selectedGroup = event.currentTarget.dataset.group;
-    showDecks();
-  }
+  function handleClick(event) {
+    const chip = event.target.closest('[data-filter]');
+    if (chip) {
+      selectedFilter = chip.dataset.filter;
+      showDecks();
+      return;
+    }
 
-  function handleDeckClick(event) {
-    const id = Number(event.currentTarget.dataset.id);
-    const action = event.currentTarget.dataset.action;
+    const button = event.target.closest('[data-action]');
+    if (!button) {
+      return;
+    }
 
+    const id = Number(button.dataset.id);
     for (let i = 0; i < categories.length; i++) {
       if (categories[i].id === id) {
         setState({ selectedCategory: { id: id, name: categories[i].name } });
       }
     }
 
-    if (action === 'quiz') {
+    if (button.dataset.action === 'quiz') {
       resetQuiz();
       goTo('quiz');
     } else {
@@ -138,6 +225,7 @@ export function render(root) {
     }
   }
 
+  content.addEventListener('click', handleClick);
   loadDecks();
 
   return function () {
