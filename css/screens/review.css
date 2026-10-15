@@ -222,9 +222,9 @@
   max-width: 640px;
   margin-inline: auto;
   padding: var(--space-5);
-  border-radius: var(--radius-x1);
+  border-radius: var(--radius-xl);
   background: linear-gradient(135deg, var(--color-peach-bg), var(--color-surface) 65%);
-  box-shadow: var(--shadow-card); 
+  box-shadow: var(--shadow-card);
   text-align: center;
 }
 
@@ -329,4 +329,9 @@
   .review-options {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+.review-empty-actions.review-empty-actions--single {
+  grid-template-columns: minmax(0, 1fr);
+  width: min(100%, 280px);
 }

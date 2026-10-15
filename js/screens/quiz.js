@@ -35,13 +35,23 @@ export function render(root) {
 
   function showNoTopic() {
     root.innerHTML = `
-      <section class="quiz-start">
-        <div class="quiz-start-card">
-          <span class="quiz-start-icon quiz-start-icon--plain">${ICONS.deck}</span>
-          <h1 class="quiz-start-title">Choose a topic</h1>
-          <p class="quiz-start-text">Pick a topic on the home screen to start a quiz.</p>
-          <div class="quiz-start-actions quiz-start-actions--single">
-            <button class="btn btn--primary" id="choose-topic" type="button">Choose a topic</button>
+      <section class="review review-empty">
+        <div class="review-empty-card">
+          <span class="review-empty-icon">${ICONS.clock}</span>
+          <p class="review-empty-kicker">Quiz</p>
+          <h1 class="review-empty-title">Choose a topic</h1>
+          <p class="review-empty-text">
+            Pick a topic on the home screen first, then answer timed questions and see how well you know it.
+          </p>
+          <ol class="review-empty-steps">
+            <li class="review-empty-step"><strong>1</strong><span>Choose a topic</span></li>
+            <li class="review-empty-step"><strong>2</strong><span>Take the quiz</span></li>
+            <li class="review-empty-step"><strong>3</strong><span>See your score</span></li>
+          </ol>
+          <div class="review-empty-actions review-empty-actions--single">
+            <button class="btn btn--primary" id="choose-topic" type="button">
+              ${ICONS.play} Choose a topic
+            </button>
           </div>
         </div>
       </section>
@@ -194,6 +204,33 @@ export function render(root) {
       timerText = formatClock(answer.secondsLeft);
     }
 
+    let correctCount = 0;
+    for (let i = 0; i < state.answers.length; i++) {
+      if (state.answers[i] && state.answers[i].isCorrect) {
+        correctCount++;
+      }
+    }
+
+    let dotsHtml = '';
+    for (let i = 0; i < total; i++) {
+      let dotClass = 'quiz-dot';
+      if (i === index) {
+        dotClass += ' quiz-dot--current';
+      }
+      if (state.answers[i]) {
+        if (state.answers[i].isCorrect) {
+          dotClass += ' quiz-dot--correct';
+        } else {
+          dotClass += ' quiz-dot--wrong';
+        }
+      }
+      let dotDisabled = '';
+      if (i > state.answers.length) {
+        dotDisabled = 'disabled';
+      }
+      dotsHtml += `<button class="${dotClass}" type="button" data-jump="${i}" aria-label="Go to question ${i + 1}" ${dotDisabled}>${i + 1}</button>`;
+    }
+
     let nextLabel = 'Next';
     if (index === total - 1) {
       nextLabel = 'Finish';
@@ -217,13 +254,20 @@ export function render(root) {
               <div class="quiz-bar-fill" style="width: ${percent}%"></div>
             </div>
           </div>
-          <span class="quiz-timer" id="quiz-timer">${ICONS.clock}<span>${timerText}</span></span>
+          <div class="quiz-meta">
+            <span class="quiz-score">${ICONS.check} ${correctCount} correct</span>
+            <span class="quiz-timer" id="quiz-timer">${ICONS.clock}<span>${timerText}</span></span>
+          </div>
         </div>
+
+        <div class="quiz-dots">${dotsHtml}</div>
 
         <h1 class="quiz-question">${escapeHtml(question.question)}</h1>
 
         <div class="quiz-options">${optionsHtml}</div>
         ${noteHtml}
+
+        <p class="quiz-keys">Tip: press A to D to answer, and the left and right arrow keys to move.</p>
 
         <div class="quiz-nav">
           <button class="btn btn--outline" id="previous-btn" type="button" ${previousDisabled}>
@@ -240,6 +284,10 @@ export function render(root) {
     for (let i = 0; i < optionButtons.length; i++) {
       optionButtons[i].addEventListener('click', handleOptionClick);
     }
+    const dotButtons = root.querySelectorAll('.quiz-dot');
+    for (let i = 0; i < dotButtons.length; i++) {
+      dotButtons[i].addEventListener('click', handleDotClick);
+    }
     root.querySelector('#previous-btn').addEventListener('click', goPrevious);
     root.querySelector('#next-btn').addEventListener('click', goNext);
 
@@ -252,6 +300,49 @@ export function render(root) {
 
   function handleOptionClick(event) {
     chooseAnswer(Number(event.currentTarget.dataset.index));
+  }
+
+  function handleDotClick(event) {
+    setState({ currentIndex: Number(event.currentTarget.dataset.jump) });
+    showQuestion();
+  }
+
+  function handleKey(event) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    const state = getState();
+    if (state.questions.length === 0 || state.finished || !root.querySelector('.quiz')) {
+      return;
+    }
+    const index = state.currentIndex;
+
+    if (event.key === 'ArrowLeft') {
+      if (index > 0) {
+        goPrevious();
+      }
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      if (state.answers[index]) {
+        goNext();
+      }
+      return;
+    }
+
+    if (state.answers[index]) {
+      return;
+    }
+    const key = event.key.toLowerCase();
+    let picked = -1;
+    if (key >= 'a' && key <= 'z') {
+      picked = key.charCodeAt(0) - 97;
+    } else if (key >= '1' && key <= '9') {
+      picked = Number(key) - 1;
+    }
+    if (picked >= 0 && picked < state.questions[index].options.length) {
+      chooseAnswer(picked);
+    }
   }
 
   function goPrevious() {
@@ -270,6 +361,8 @@ export function render(root) {
     }
   }
 
+  document.addEventListener('keydown', handleKey);
+
   const state = getState();
   if (!state.selectedCategory) {
     showNoTopic();
@@ -282,5 +375,6 @@ export function render(root) {
   return function () {
     active = false;
     stopTimer();
+    document.removeEventListener('keydown', handleKey);
   };
 }

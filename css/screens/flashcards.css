@@ -2,29 +2,36 @@
   container-type: inline-size;
   container-name: flash;
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-6);
+  padding-bottom: var(--space-5);
 }
 
 .flash-head {
   display: grid;
-  gap: var(--space-3);
+  gap: var(--space-4);
+  margin-bottom: var(--space-2);
 }
 
 .flash-title {
   margin: 0;
+  font-size: var(--text-2xl);
+  line-height: 1.4;
 }
 
 .flash-subtitle {
   margin: 0;
   color: var(--color-text-muted);
+  font-size: var(--text-md);
+  line-height: 1.7;
 }
 
 .flash-progress {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: var(--space-2) var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  gap: var(--space-4);
+  padding: var(--space-5);
+  margin-bottom: var(--space-2);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -34,24 +41,26 @@
 .flash-progress-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--color-peach-bg);
   color: var(--color-brand);
 }
 
 .flash-progress-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .flash-progress-text {
   display: grid;
+  gap: var(--space-2);
+  line-height: 1.6;
 }
 
 .flash-progress-text strong {
-  font-size: var(--text-sm);
+  font-size: var(--text-md);
 }
 
 .flash-progress-text span {
@@ -61,7 +70,8 @@
 
 .flash-bar {
   grid-column: 1 / -1;
-  height: 8px;
+  height: 12px;
+  margin-top: var(--space-2);
   border-radius: var(--radius-pill);
   background: var(--color-border);
   overflow: hidden;
@@ -77,7 +87,14 @@
 .flash-chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-3);
+  margin-block: var(--space-2);
+}
+
+.flash-chips .chip {
+  min-height: 48px;
+  padding: 0 var(--space-5);
+  font-size: var(--text-md);
 }
 
 .chip--more {
@@ -86,15 +103,63 @@
   font-weight: 700;
 }
 
+.flash-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  margin-block: var(--space-2);
+}
+
+.flash-stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.flash-stat strong {
+  color: var(--color-text);
+  font-size: var(--text-md);
+}
+
+.flash-stat--known {
+  border-color: var(--color-correct);
+  background: var(--color-correct-bg);
+  color: var(--color-correct-text);
+}
+
+.flash-stat--known strong {
+  color: var(--color-correct-text);
+}
+
+.flash-stat--again {
+  border-color: var(--color-brand);
+  background: var(--color-timer-bg);
+  color: var(--color-timer-text);
+}
+
+.flash-stat--again strong {
+  color: var(--color-timer-text);
+}
+
+/* Flashcard and navigation */
 .flash-stage {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   grid-template-areas:
-    'card card'
-    'prev next';
-  gap: 40px var(--space-4);
+    "card card"
+    "prev next";
+  gap: var(--space-6) var(--space-5);
   justify-items: center;
-  padding: var(--space-3) var(--space-6) 0;
+  align-items: center;
+  padding: var(--space-5) var(--space-6);
+  margin-block: var(--space-2);
 }
 
 .flip-scene {
@@ -102,10 +167,10 @@
   isolation: isolate;
   grid-area: card;
   width: 100%;
-  max-width: 420px;
-  margin-inline: auto;
+  max-width: 620px;
+  margin: var(--space-3) auto var(--space-5);
   perspective: 1200px;
-  transform: rotate(2deg);
+  transform: rotate(1deg);
 }
 
 .flip-scene::before,
@@ -114,26 +179,27 @@
   position: absolute;
   z-index: -1;
   border-radius: var(--radius-xl);
+  pointer-events: none;
 }
 
 .flip-scene::before {
-  inset: 14px -28px -22px -28px;
+  inset: 18px -20px -24px -20px;
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
   transform: rotate(3deg);
 }
 
 .flip-scene::after {
-  inset: 8px -16px -14px -16px;
+  inset: 10px -10px -14px -10px;
   background: var(--color-peach-bg);
-  transform: rotate(-4deg);
+  transform: rotate(-3deg);
 }
 
 .flip-card {
   position: relative;
   display: grid;
   width: 100%;
-  min-height: 220px;
+  min-height: 340px;
   text-align: center;
   cursor: pointer;
   transform-style: preserve-3d;
@@ -151,8 +217,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: var(--space-3);
-  padding: var(--space-5);
+  gap: var(--space-5);
+  padding: clamp(24px, 5vw, 48px);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-lift);
   overflow: hidden;
@@ -185,12 +251,20 @@
 }
 
 .flip-front {
-  background: linear-gradient(145deg, var(--color-brand), var(--color-brand-dark));
+  background: linear-gradient(
+    145deg,
+    var(--color-brand),
+    var(--color-brand-dark)
+  );
   color: var(--color-on-brand);
 }
 
 .flip-back {
-  background: linear-gradient(145deg, var(--color-brand), var(--color-brand-dark));
+  background: linear-gradient(
+    145deg,
+    var(--color-brand),
+    var(--color-brand-dark)
+  );
   color: var(--color-on-brand);
   transform: rotateY(180deg);
 }
@@ -205,6 +279,7 @@
 }
 
 .flip-label {
+  margin-bottom: var(--space-2);
   font-size: var(--text-sm);
   font-weight: 500;
   letter-spacing: 0.14em;
@@ -213,60 +288,72 @@
 }
 
 .flip-text {
+  max-width: 100%;
+  margin: var(--space-2) 0;
   font-family: var(--font-heading);
-  font-size: var(--text-xl);
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .flip-text--long {
-  font-size: var(--text-md);
-  line-height: 1.35;
+  font-size: var(--text-lg);
+  line-height: 1.7;
 }
 
 .flip-line {
-  width: 40px;
-  height: 2px;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.6);
+  flex: none;
+  width: 48px;
+  height: 3px;
+  margin-block: var(--space-2);
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.7);
 }
 
 .flip-hint {
-  max-width: 26ch;
-  font-size: var(--text-md);
-  line-height: 1.45;
+  max-width: 30ch;
+  margin-top: var(--space-3);
+  font-size: var(--text-sm);
+  line-height: 1.8;
   opacity: 0.85;
   overflow-wrap: anywhere;
 }
 
 .flip-answer {
+  max-width: 100%;
+  margin-block: var(--space-2);
   font-family: var(--font-heading);
-  font-size: var(--text-xl);
+  font-size: clamp(1.5rem, 3vw, 2rem);
   font-weight: 700;
-  line-height: 1.25;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
 .flip-answer--long {
-  font-size: var(--text-md);
-  line-height: 1.4;
+  font-size: var(--text-lg);
+  line-height: 1.7;
 }
 
+/* Previous and next buttons */
 .flash-arrow {
   display: grid;
   place-items: center;
-  width: 52px;
-  height: 52px;
-  border: 1px solid var(--color-border);
+  width: 56px;
+  height: 56px;
+  border: 2px solid var(--color-border);
   border-radius: 50%;
   background: var(--color-surface);
   color: var(--color-brand);
   cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
 }
 
 .flash-arrow:hover {
   background: var(--color-timer-bg);
+  transform: scale(1.05);
 }
 
 .flash-prev {
@@ -279,22 +366,52 @@
   justify-self: end;
 }
 
+/* Study action buttons */
+.flash-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+
+.flash-tool {
+  min-height: 52px;
+  padding-inline: var(--space-5);
+  font-size: var(--text-md);
+}
+
+.flash-keys {
+  margin: var(--space-3) 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.8;
+  text-align: center;
+}
+
 .flash-actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: var(--space-3);
-  margin-top: var(--space-2);
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  padding-top: var(--space-2);
 }
 
 .flash-actions .btn {
   width: 100%;
+  min-height: 56px;
+  padding-inline: var(--space-5);
+  font-size: var(--text-md);
 }
 
+/* Completion screen */
 .flash-done {
   display: grid;
   justify-items: center;
-  gap: var(--space-3);
-  padding: var(--space-6) var(--space-4);
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+  padding: var(--space-7) var(--space-5);
   border-radius: var(--radius-xl);
   background: var(--color-surface);
   box-shadow: var(--shadow-card);
@@ -303,26 +420,33 @@
 
 .flash-done h2 {
   margin: 0;
+  font-size: var(--text-2xl);
+  line-height: 1.4;
 }
 
 .flash-done p {
+  max-width: 48ch;
   margin: 0;
   color: var(--color-text-muted);
+  font-size: var(--text-md);
+  line-height: 1.8;
 }
 
+/* Small screens */
 @container flash (min-width: 420px) {
   .flash-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
+/* Tablet and larger screens */
 @container flash (min-width: 520px) {
   .flash-stage {
-    grid-template-columns: 56px minmax(0, 1fr) 56px;
-    grid-template-areas: 'prev card next';
+    grid-template-columns: 64px minmax(0, 1fr) 64px;
+    grid-template-areas: "prev card next";
     align-items: center;
-    gap: var(--space-4);
-    padding-bottom: 32px;
+    gap: var(--space-6);
+    padding: var(--space-5) var(--space-4) var(--space-7);
   }
 
   .flash-prev,
@@ -330,24 +454,124 @@
     justify-self: center;
   }
 
+  .flash-arrow {
+    width: 60px;
+    height: 60px;
+  }
+
   .flip-card {
-    min-height: 240px;
+    min-height: 380px;
+  }
+
+  .flash-tools {
+    gap: var(--space-5);
   }
 }
 
 @container flash (min-width: 640px) {
   .flash-head {
-    grid-template-columns: minmax(0, 1fr) 280px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     align-items: start;
+    gap: var(--space-6);
   }
 
   .flash-actions {
     grid-template-columns: auto auto;
     justify-content: center;
+    gap: var(--space-5);
   }
 
   .flash-actions .btn {
     width: auto;
-    min-width: 180px;
+    min-width: 220px;
+  }
+
+  .flash-progress {
+    padding: var(--space-5) var(--space-6);
+  }
+
+  .flash-stats {
+    gap: var(--space-4);
+  }
+}
+
+/* Mobile spacing adjustments */
+@media (max-width: 480px) {
+  .flash {
+    gap: var(--space-5);
+  }
+
+  .flash-head {
+    gap: var(--space-3);
+  }
+
+  .flash-progress {
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+
+  .flash-chips {
+    gap: var(--space-3);
+  }
+
+  .flash-stats {
+    gap: var(--space-3);
+  }
+
+  .flash-stage {
+    gap: var(--space-6) var(--space-4);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .flip-scene {
+    margin-block: var(--space-3) var(--space-4);
+  }
+
+  .flip-card {
+    min-height: 300px;
+  }
+
+  .flip-face {
+    gap: var(--space-4);
+    padding: var(--space-5);
+  }
+
+  .flip-scene::before {
+    inset: 14px -12px -18px -12px;
+  }
+
+  .flip-scene::after {
+    inset: 8px -6px -10px -6px;
+  }
+
+  .flash-tools {
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+
+  .flash-tool {
+    flex: 1 1 140px;
+  }
+
+  .flash-actions {
+    gap: var(--space-3);
+  }
+
+  .flash-actions .btn {
+    min-height: 54px;
+  }
+
+  .flash-done {
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-4);
+  }
+}
+
+/* Respect reduced-motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .flip-card,
+  .flash-bar-fill,
+  .flash-arrow {
+    transition: none;
   }
 }

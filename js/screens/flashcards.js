@@ -2,24 +2,32 @@ import { getCategories, loadCards } from '../api.js';
 import { MESSAGES } from '../config.js';
 import { getState, setState, resetFlashcards } from '../state.js';
 import { saveFlashcardResult } from '../database.js';
+import { goTo } from '../nav.js';
 import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
-import { TOPICS } from '../../data/topics.js';
+import { openTopicDialog } from '../dialog.js';
+import { TOPICS, getTopicData } from '../../data/topics.js';
+
+function getTopicLabel(category) {
+  for (let i = 0; i < TOPICS.length; i++) {
+    if (TOPICS[i].id === category.id) {
+      return TOPICS[i].label;
+    }
+  }
+  return category.name;
+}
+
+function getDifficultyLabel(value) {
+  if (!value) {
+    return 'Any';
+  }
+  return value.charAt(0).toUpperCase() + value.slice(1);
+}
 
 export function render(root) {
   let active = true;
   let categories = [];
   let flipped = false;
-  let showAll = false;
-
-  function getTopicLabel(category) {
-    for (let i = 0; i < TOPICS.length; i++) {
-      if (TOPICS[i].id === category.id) {
-        return TOPICS[i].label;
-      }
-    }
-    return category.name;
-  }
 
   function getMainCategories() {
     const main = [];
@@ -54,9 +62,6 @@ export function render(root) {
     if (main.length === 0) {
       return { visible: categories, hiddenCount: 0 };
     }
-    if (showAll) {
-      return { visible: main.concat(others), hiddenCount: others.length };
-    }
 
     const selectedId = getState().selectedCategory.id;
     let visible = main;
@@ -68,40 +73,116 @@ export function render(root) {
     return { visible: visible, hiddenCount: others.length };
   }
 
-  async function start() {
-    showLoading(root, MESSAGES.loadingTopics);
+  function showNoTopic() {
+    root.innerHTML = `
+      <section class="review review-empty">
+        <div class="review-empty-card">
+          <span class="review-empty-icon">${ICONS.deck}</span>
+          <p class="review-empty-kicker">Flashcards</p>
+          <h1 class="review-empty-title">Choose a deck</h1>
+          <p class="review-empty-text">
+            Pick a deck first, then flip through the cards and mark the ones you know.
+          </p>
+          <ol class="review-empty-steps">
+            <li class="review-empty-step"><strong>1</strong><span>Choose a deck</span></li>
+            <li class="review-empty-step"><strong>2</strong><span>Flip the cards</span></li>
+            <li class="review-empty-step"><strong>3</strong><span>Mark what you know</span></li>
+          </ol>
+          <div class="review-empty-actions review-empty-actions--single">
+            <button class="btn btn--primary" id="choose-deck" type="button">
+              ${ICONS.deck} Choose a deck
+            </button>
+          </div>
+        </div>
+      </section>
+    `;
+    root.querySelector('#choose-deck').addEventListener('click', function () {
+      goTo('decks');
+    });
+  }
+
+  function showIntro() {
+    const state = getState();
+    const category = state.selectedCategory;
+    const data = getTopicData(category.id);
+
+    root.innerHTML = `
+      <section class="quiz-start">
+        <div class="quiz-start-card">
+          <span class="quiz-start-icon" style="background: ${data.tile}; color: ${data.color};">
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${data.path}</svg>
+          </span>
+          <p class="quiz-start-kicker">Flashcards</p>
+          <h1 class="quiz-start-title">${escapeHtml(getTopicLabel(category))}</h1>
+          <p class="quiz-start-text">
+            Read the question, flip the card to see the answer, then mark the ones you know.
+          </p>
+          <ul class="quiz-start-facts">
+            <li class="quiz-start-fact">
+              <strong>${state.amount}</strong>
+              <span>Cards</span>
+            </li>
+            <li class="quiz-start-fact">
+              <strong>${getDifficultyLabel(state.difficulty)}</strong>
+              <span>Difficulty</span>
+            </li>
+            <li class="quiz-start-fact">
+              <strong>Flip</strong>
+              <span>Study style</span>
+            </li>
+          </ul>
+          <div class="quiz-start-actions">
+            <button class="btn btn--primary" id="begin-study" type="button">
+              ${ICONS.play} Start Studying
+            </button>
+            <button class="btn btn--outline" id="change-topic" type="button">Change topic</button>
+          </div>
+        </div>
+      </section>
+    `;
+    root.querySelector('#begin-study').addEventListener('click', startStudy);
+    root.querySelector('#change-topic').addEventListener('click', function () {
+      goTo('home');
+    });
+  }
+
+  async function loadCategoryList() {
+    if (categories.length > 0) {
+      return true;
+    }
     try {
       categories = await getCategories();
     } catch (error) {
-      if (active) {
-        showError(root, 'Could not load topics', MESSAGES.topicsError, start);
-      }
-      return;
+      return false;
     }
+    return categories.length > 0;
+  }
+
+  async function startStudy() {
+    showLoading(root, MESSAGES.loadingTopics);
+    const loaded = await loadCategoryList();
     if (!active) {
       return;
     }
-    if (categories.length === 0) {
-      showError(root, 'No topics found', MESSAGES.topicsError, start);
+    if (!loaded) {
+      showError(root, 'Could not load topics', MESSAGES.topicsError, startStudy);
       return;
     }
+    loadDeck();
+  }
 
-    if (!getState().selectedCategory) {
-      const main = getMainCategories();
-      let first = categories[0];
-      if (main.length > 0) {
-        first = main[0];
-      }
-      setState({ selectedCategory: { id: first.id, name: first.name } });
+  async function resumeStudy() {
+    showLoading(root, MESSAGES.loadingTopics);
+    const loaded = await loadCategoryList();
+    if (!active) {
+      return;
     }
-
-    const state = getState();
-    if (state.flashCategoryId === state.selectedCategory.id && state.flashTotal > 0) {
-      drawPage();
-      drawBody();
-    } else {
-      loadDeck();
+    if (!loaded) {
+      showError(root, 'Could not load topics', MESSAGES.topicsError, resumeStudy);
+      return;
     }
+    drawPage();
+    drawBody();
   }
 
   async function loadDeck() {
@@ -142,12 +223,31 @@ export function render(root) {
           <div class="flash-progress" id="flash-progress"></div>
         </div>
         <div class="flash-chips" id="flash-chips"></div>
+        <div class="flash-stats" id="flash-stats"></div>
         <div id="flash-body"></div>
       </section>
     `;
 
     drawChips();
     drawProgress();
+    drawStats();
+  }
+
+  function drawStats() {
+    const state = getState();
+    const box = root.querySelector('#flash-stats');
+    if (!box) {
+      return;
+    }
+    if (state.flashTotal === 0) {
+      box.innerHTML = '';
+      return;
+    }
+    box.innerHTML = `
+      <span class="flash-stat"><strong>${state.flashQueue.length}</strong> left</span>
+      <span class="flash-stat flash-stat--known"><strong>${state.flashKnown.length}</strong> known</span>
+      <span class="flash-stat flash-stat--again"><strong>${state.flashAgain}</strong> to review</span>
+    `;
   }
 
   function drawChips() {
@@ -166,11 +266,7 @@ export function render(root) {
     }
 
     if (result.hiddenCount > 0) {
-      let moreLabel = '+ ' + result.hiddenCount + ' more';
-      if (showAll) {
-        moreLabel = 'Show fewer';
-      }
-      chipsHtml += `<button class="chip chip--more" id="flash-more" type="button" aria-expanded="${showAll}">${moreLabel}</button>`;
+      chipsHtml += `<button class="chip chip--more" id="flash-more" type="button">+ ${result.hiddenCount} more</button>`;
     }
 
     const box = root.querySelector('#flash-chips');
@@ -205,26 +301,31 @@ export function render(root) {
     `;
   }
 
-  function handleChipClick(event) {
-    const button = event.currentTarget;
-    setState({ selectedCategory: { id: Number(button.dataset.id), name: button.dataset.name } });
+  function pickCategory(category) {
+    setState({ selectedCategory: { id: category.id, name: category.name } });
     resetFlashcards();
     loadDeck();
   }
 
-  function handleMoreClick() {
-    showAll = !showAll;
-    drawChips();
-    const moreButton = root.querySelector('#flash-more');
-    if (moreButton) {
-      moreButton.focus();
-    }
+  function handleChipClick(event) {
+    const button = event.currentTarget;
+    pickCategory({ id: Number(button.dataset.id), name: button.dataset.name });
+  }
+
+  function handleMoreClick(event) {
+    openTopicDialog(
+      categories,
+      getState().selectedCategory.id,
+      pickCategory,
+      event.currentTarget,
+    );
   }
 
   function drawBody() {
     const state = getState();
     const body = root.querySelector('#flash-body');
     drawProgress();
+    drawStats();
 
     if (state.flashQueue.length === 0) {
       body.innerHTML = `
@@ -278,6 +379,14 @@ export function render(root) {
           ${ICONS.arrowRight}
         </button>
       </div>
+      <div class="flash-tools">
+        <button class="btn btn--outline flash-tool" id="flip-btn" type="button">
+          ${ICONS.refresh} Flip card
+        </button>
+        <button class="btn btn--outline flash-tool" id="shuffle-btn" type="button">
+          ${ICONS.deck} Shuffle
+        </button>
+      </div>
       <div class="flash-actions">
         <button class="btn btn--outline" id="review-again" type="button">
           ${ICONS.refresh} Review again
@@ -286,8 +395,11 @@ export function render(root) {
           ${ICONS.check} Got it
         </button>
       </div>
+      <p class="flash-keys">Tip: press F to flip, and the left and right arrow keys to move.</p>
     `;
 
+    body.querySelector('#flip-btn').addEventListener('click', flipCard);
+    body.querySelector('#shuffle-btn').addEventListener('click', shuffleCards);
     body.querySelector('#flip-card').addEventListener('click', flipCard);
     body.querySelector('#flip-card').addEventListener('keydown', handleCardKey);
     body.querySelector('#prev-card').addEventListener('click', previousCard);
@@ -304,6 +416,38 @@ export function render(root) {
   function handleCardKey(event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
+      flipCard();
+    }
+  }
+
+  function shuffleCards() {
+    const queue = getState().flashQueue.slice();
+    for (let i = queue.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const temp = queue[i];
+      queue[i] = queue[j];
+      queue[j] = temp;
+    }
+    setState({ flashQueue: queue });
+    flipped = false;
+    drawBody();
+  }
+
+  function handleKey(event) {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (document.querySelector('dialog[open]')) {
+      return;
+    }
+    if (!root.querySelector('#flip-card')) {
+      return;
+    }
+    if (event.key === 'ArrowRight') {
+      nextCard();
+    } else if (event.key === 'ArrowLeft') {
+      previousCard();
+    } else if (event.key === 'f' || event.key === 'F') {
       flipCard();
     }
   }
@@ -345,9 +489,19 @@ export function render(root) {
     drawBody();
   }
 
-  start();
+  document.addEventListener('keydown', handleKey);
+
+  const state = getState();
+  if (!state.selectedCategory) {
+    showNoTopic();
+  } else if (state.flashCategoryId === state.selectedCategory.id && state.flashTotal > 0) {
+    resumeStudy();
+  } else {
+    showIntro();
+  }
 
   return function () {
     active = false;
+    document.removeEventListener('keydown', handleKey);
   };
 }

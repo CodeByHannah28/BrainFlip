@@ -4,10 +4,19 @@ import { getState, setState, resetQuiz, resetFlashcards } from '../state.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { createDropdown } from '../dropdown.js';
 import { TOPICS, getTopicData } from '../../data/topics.js';
+
+const DIFFICULTIES = [
+  { value: '', label: 'Any' },
+  { value: 'easy', label: 'Easy' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'hard', label: 'Hard' },
+];
 
 export function render(root) {
   let active = true;
+  let dropdowns = [];
   let categories = [];
   let counts = {};
   let showAll = false;
@@ -77,14 +86,6 @@ export function render(root) {
       showError(content, 'No topics found', MESSAGES.topicsError, loadTopics);
       return;
     }
-    if (!getState().selectedCategory) {
-      const main = getMainCategories();
-      let first = categories[0];
-      if (main.length > 0) {
-        first = main[0];
-      }
-      setState({ selectedCategory: { id: first.id, name: first.name } });
-    }
     showTopics();
   }
 
@@ -104,7 +105,10 @@ export function render(root) {
       return { visible: main.concat(others), hiddenCount: others.length };
     }
 
-    const selectedId = getState().selectedCategory.id;
+    let selectedId = null;
+    if (getState().selectedCategory) {
+      selectedId = getState().selectedCategory.id;
+    }
     let visible = main;
     for (let i = 0; i < others.length; i++) {
       if (others[i].id === selectedId) {
@@ -121,7 +125,7 @@ export function render(root) {
 
     for (let i = 0; i < result.visible.length; i++) {
       const category = result.visible[i];
-      const selected = state.selectedCategory.id === category.id;
+      const selected = Boolean(state.selectedCategory) && state.selectedCategory.id === category.id;
       const data = getTopicData(category.id);
 
       let name = category.name;
@@ -167,49 +171,40 @@ export function render(root) {
       `;
     }
 
-    let difficultyHtml = '';
-    const difficulties = [
-      { value: '', label: 'Any' },
-      { value: 'easy', label: 'Easy' },
-      { value: 'medium', label: 'Medium' },
-      { value: 'hard', label: 'Hard' },
-    ];
-    for (let i = 0; i < difficulties.length; i++) {
-      let selectedText = '';
-      if (difficulties[i].value === state.difficulty) {
-        selectedText = 'selected';
-      }
-      difficultyHtml += `<option value="${difficulties[i].value}" ${selectedText}>${difficulties[i].label}</option>`;
+    const amounts = [];
+    for (let i = 0; i < SETTINGS.amountOptions.length; i++) {
+      amounts.push({ value: SETTINGS.amountOptions[i], label: String(SETTINGS.amountOptions[i]) });
     }
 
-    let amountHtml = '';
-    for (let i = 0; i < SETTINGS.amountOptions.length; i++) {
-      let selectedText = '';
-      if (SETTINGS.amountOptions[i] === state.amount) {
-        selectedText = 'selected';
-      }
-      amountHtml += `<option value="${SETTINGS.amountOptions[i]}" ${selectedText}>${SETTINGS.amountOptions[i]}</option>`;
+    destroyDropdowns();
+
+    let startDisabled = '';
+    let hintHtml = '';
+    if (!state.selectedCategory) {
+      startDisabled = 'disabled';
+      hintHtml = '<p class="home-hint">Pick a topic above to get started.</p>';
     }
 
     content.innerHTML = `
       <div class="topic-grid">${topicsHtml}</div>
       ${moreHtml}
       <div class="home-options">
-        <label class="field">
-          <span>Difficulty</span>
-          <select id="difficulty">${difficultyHtml}</select>
-        </label>
-        <label class="field">
-          <span>Questions</span>
-          <select id="amount">${amountHtml}</select>
-        </label>
+        <div class="field">
+          <span id="difficulty-label">Difficulty</span>
+          <div id="difficulty"></div>
+        </div>
+        <div class="field">
+          <span id="amount-label">Questions</span>
+          <div id="amount"></div>
+        </div>
       </div>
+      ${hintHtml}
       <div class="home-actions">
-        <button class="btn btn--primary" id="start-quiz" type="button">
+        <button class="btn btn--primary" id="start-quiz" type="button" ${startDisabled}>
           <span class="home-actions-label">${ICONS.play} Start Quiz</span>
           ${ICONS.arrowRight}
         </button>
-        <button class="btn btn--outline" id="start-cards" type="button">
+        <button class="btn btn--outline" id="start-cards" type="button" ${startDisabled}>
           <span class="home-actions-label">${ICONS.deck} Study Flashcards</span>
           ${ICONS.arrowRight}
         </button>
@@ -224,8 +219,24 @@ export function render(root) {
     if (moreButton) {
       moreButton.addEventListener('click', handleMoreClick);
     }
-    content.querySelector('#difficulty').addEventListener('change', handleDifficultyChange);
-    content.querySelector('#amount').addEventListener('change', handleAmountChange);
+    dropdowns.push(
+      createDropdown(content.querySelector('#difficulty'), {
+        id: 'difficulty',
+        labelId: 'difficulty-label',
+        options: DIFFICULTIES,
+        value: state.difficulty,
+        onChange: handleDifficultyChange,
+      }),
+    );
+    dropdowns.push(
+      createDropdown(content.querySelector('#amount'), {
+        id: 'amount',
+        labelId: 'amount-label',
+        options: amounts,
+        value: state.amount,
+        onChange: handleAmountChange,
+      }),
+    );
     content.querySelector('#start-quiz').addEventListener('click', startQuiz);
     content.querySelector('#start-cards').addEventListener('click', startCards);
   }
@@ -253,12 +264,19 @@ export function render(root) {
     }
   }
 
-  function handleDifficultyChange(event) {
-    setState({ difficulty: event.target.value });
+  function destroyDropdowns() {
+    for (let i = 0; i < dropdowns.length; i++) {
+      dropdowns[i].destroy();
+    }
+    dropdowns = [];
   }
 
-  function handleAmountChange(event) {
-    setState({ amount: Number(event.target.value) });
+  function handleDifficultyChange(value) {
+    setState({ difficulty: value });
+  }
+
+  function handleAmountChange(value) {
+    setState({ amount: Number(value) });
   }
 
   function startQuiz() {
@@ -275,5 +293,6 @@ export function render(root) {
 
   return function () {
     active = false;
+    destroyDropdowns();
   };
 }

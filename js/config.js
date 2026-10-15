@@ -15,6 +15,6 @@ export const MESSAGES = {
   topicsError: 'Could not load topics. Please check your internet connection and try again.',
   noQuestions:
     'There are not enough questions for this topic and difficulty. Try fewer questions, another difficulty or another topic.',
-  guest: "You haven't created an account, so your progress isn't saved.",
+  guest: "You haven't signed in with Google, so your progress isn't saved.",
   signInTip: 'Sign in with Google to save your progress',
 };

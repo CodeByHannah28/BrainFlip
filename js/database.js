@@ -63,7 +63,7 @@ export async function loadProgress() {
 
   const cardSnapshot = await getDocs(collection(db, 'users', user.uid, 'flashcards'));
   cardSnapshot.forEach(function (item) {
-    flashcards.push(item.data());
+    flashcards.push(Object.assign({ id: item.id }, item.data()));
   });
 
   return { quizzes: quizzes, flashcards: flashcards };
