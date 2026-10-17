@@ -25,6 +25,7 @@ const menuBtn = document.getElementById('menu-btn');
 const closeBtn = document.getElementById('close-btn');
 const scrim = document.getElementById('scrim');
 const navList = document.querySelector('.nav-list');
+const brandLinks = document.querySelectorAll('.brand-link');
 
 let cleanup = null;
 let firstRender = true;
@@ -98,6 +99,12 @@ navList.addEventListener('click', function (event) {
     closeMenu();
   }
 });
+
+for (let i = 0; i < brandLinks.length; i++) {
+  brandLinks[i].addEventListener('click', function () {
+    closeMenu();
+  });
+}
 
 document.addEventListener('keydown', function (event) {
   if (event.key === 'Escape' && document.body.classList.contains('nav-open')) {

@@ -240,14 +240,12 @@ export function render(root) {
   }
 
   async function saveResult() {
-    if (!getUser()) {
-      note.textContent = MESSAGES.signInTip + '.';
-      return;
-    }
-
     const state = getState();
+    const signedIn = Boolean(getUser());
+    const savedText = signedIn ? 'This result is saved to your progress.' : MESSAGES.guestSaved;
+
     if (state.resultSaved === true) {
-      note.textContent = 'This result is saved to your progress.';
+      note.textContent = savedText;
       return;
     }
     if (state.resultSaved === 'saving') {
@@ -272,7 +270,9 @@ export function render(root) {
       });
       setState({ resultSaved: true });
       if (active) {
-        note.textContent = 'This result is saved to your progress.';
+        note.textContent = getUser()
+          ? 'This result is saved to your progress.'
+          : MESSAGES.guestSaved;
       }
     } catch (error) {
       setState({ resultSaved: false });

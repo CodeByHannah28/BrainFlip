@@ -23,6 +23,9 @@ export function formatDuration(totalSeconds) {
 }
 
 export function formatDate(timestamp) {
+  if (typeof timestamp === 'number') {
+    return new Date(timestamp).toLocaleDateString();
+  }
   if (!timestamp || !timestamp.toDate) {
     return '';
   }

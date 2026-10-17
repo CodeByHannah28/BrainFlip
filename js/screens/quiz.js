@@ -76,7 +76,7 @@ export function render(root) {
           <p class="quiz-start-kicker">Quiz</p>
           <h1 class="quiz-start-title">${escapeHtml(getTopicLabel(category))}</h1>
           <p class="quiz-start-text">
-            Answer each question before the timer runs out. You can go back to earlier questions.
+            Answer each question before the timer runs out. You can go back and change your answers.
           </p>
           <ul class="quiz-start-facts">
             <li class="quiz-start-fact">
@@ -149,11 +149,21 @@ export function render(root) {
     const index = state.currentIndex;
     const question = state.questions[index];
 
+    const previous = state.answers[index];
+    if (previous && previous.pickedIndex === pickedIndex) {
+      return;
+    }
+
+    let timeLeft = secondsLeft;
+    if (previous) {
+      timeLeft = previous.secondsLeft;
+    }
+
     const answers = state.answers.slice();
     answers[index] = {
       pickedIndex: pickedIndex,
       isCorrect: pickedIndex === question.correctIndex,
-      secondsLeft: secondsLeft,
+      secondsLeft: timeLeft,
     };
     setState({ answers: answers });
     showQuestion();
@@ -175,7 +185,7 @@ export function render(root) {
         className = 'quiz-option quiz-option--selected';
       }
       let disabled = '';
-      if (answer) {
+      if (answer && answer.pickedIndex === -1) {
         disabled = 'disabled';
       }
 
@@ -311,7 +321,7 @@ export function render(root) {
       return;
     }
 
-    if (state.answers[index]) {
+    if (state.answers[index] && state.answers[index].pickedIndex === -1) {
       return;
     }
     const key = event.key.toLowerCase();
