@@ -5,6 +5,7 @@ import { goTo } from '../nav.js';
 import { escapeHtml, formatClock, getLetter, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
 import { TOPICS, getTopicData } from '../../data/topics.js';
+import { topicIconHtml } from '../topic-icon.js';
 
 function getTopicLabel(category) {
   for (let i = 0; i < TOPICS.length; i++) {
@@ -170,15 +171,8 @@ export function render(root) {
     let optionsHtml = '';
     for (let i = 0; i < question.options.length; i++) {
       let className = 'quiz-option';
-      let mark = '';
-      if (answer) {
-        if (i === question.correctIndex) {
-          className = 'quiz-option quiz-option--correct';
-          mark = ICONS.check;
-        } else if (i === answer.pickedIndex) {
-          className = 'quiz-option quiz-option--wrong';
-          mark = ICONS.cross;
-        }
+      if (answer && i === answer.pickedIndex) {
+        className = 'quiz-option quiz-option--selected';
       }
       let disabled = '';
       if (answer) {
@@ -189,26 +183,18 @@ export function render(root) {
         <button class="${className}" type="button" data-index="${i}" ${disabled}>
           <span class="quiz-letter">${getLetter(i)}</span>
           <span>${escapeHtml(question.options[i])}</span>
-          <span class="quiz-mark">${mark}</span>
         </button>
       `;
     }
 
     let noteHtml = '';
     if (answer && answer.pickedIndex === -1) {
-      noteHtml = '<p class="quiz-note">Time is up. The correct answer is highlighted.</p>';
+      noteHtml = '<p class="quiz-note">Time is up. No answer was recorded for this question.</p>';
     }
 
     let timerText = formatClock(SETTINGS.secondsPerQuestion);
     if (answer) {
       timerText = formatClock(answer.secondsLeft);
-    }
-
-    let correctCount = 0;
-    for (let i = 0; i < state.answers.length; i++) {
-      if (state.answers[i] && state.answers[i].isCorrect) {
-        correctCount++;
-      }
     }
 
     let dotsHtml = '';
@@ -218,11 +204,7 @@ export function render(root) {
         dotClass += ' quiz-dot--current';
       }
       if (state.answers[i]) {
-        if (state.answers[i].isCorrect) {
-          dotClass += ' quiz-dot--correct';
-        } else {
-          dotClass += ' quiz-dot--wrong';
-        }
+        dotClass += ' quiz-dot--answered';
       }
       let dotDisabled = '';
       if (i > state.answers.length) {
@@ -247,7 +229,7 @@ export function render(root) {
     root.innerHTML = `
       <section class="quiz card">
         <div class="quiz-top">
-          <span class="quiz-topic">${escapeHtml(state.selectedCategory.name)}</span>
+          <span class="quiz-topic">${topicIconHtml(state.selectedCategory.id, 26)}<span class="quiz-topic-name">${escapeHtml(state.selectedCategory.name)}</span></span>
           <div class="quiz-progress">
             <span>Question ${index + 1} of ${total}</span>
             <div class="quiz-bar">
@@ -255,7 +237,6 @@ export function render(root) {
             </div>
           </div>
           <div class="quiz-meta">
-            <span class="quiz-score">${ICONS.check} ${correctCount} correct</span>
             <span class="quiz-timer" id="quiz-timer">${ICONS.clock}<span>${timerText}</span></span>
           </div>
         </div>

@@ -162,8 +162,8 @@ export function render(root) {
             ${questionsHtml}
           </p>
           <div class="deck-actions">
-            <button class="deck-action" type="button" data-action="cards" data-id="${category.id}" aria-label="Study ${escapeHtml(name)} flashcards" title="Study flashcards">${ICONS.deck}</button>
-            <button class="deck-action deck-action--quiz" type="button" data-action="quiz" data-id="${category.id}" aria-label="Start ${escapeHtml(name)} quiz" title="Start quiz">${ICONS.arrowRight}</button>
+            <button class="deck-action" type="button" data-action="cards" data-id="${category.id}" aria-label="Study ${escapeHtml(name)} flashcards" title="Study flashcards">${ICONS.deck}<span>Study flashcards</span></button>
+            <button class="deck-action deck-action--quiz" type="button" data-action="quiz" data-id="${category.id}" aria-label="Start ${escapeHtml(name)} quiz" title="Start quiz">${ICONS.play}<span>Start quiz</span></button>
           </div>
         </div>
       </article>

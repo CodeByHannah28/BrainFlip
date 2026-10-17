@@ -7,6 +7,7 @@ import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
 import { openTopicDialog } from '../dialog.js';
 import { TOPICS, getTopicData } from '../../data/topics.js';
+import { topicIconHtml } from '../topic-icon.js';
 
 function getTopicLabel(category) {
   for (let i = 0; i < TOPICS.length; i++) {
@@ -22,6 +23,25 @@ function getDifficultyLabel(value) {
     return 'Any';
   }
   return value.charAt(0).toUpperCase() + value.slice(1);
+}
+
+function getFinishMessage(total, again) {
+  if (again === 0) {
+    return {
+      title: 'Perfect run!',
+      text: 'You knew all ' + total + ' cards without needing a second look. Brilliant work, keep that streak alive!',
+    };
+  }
+  if (again <= Math.ceil(total / 2)) {
+    return {
+      title: 'Deck conquered!',
+      text: 'You mastered all ' + total + ' cards. A few needed a second look, and that is exactly how knowledge sticks.',
+    };
+  }
+  return {
+    title: 'You made it through!',
+    text: 'All ' + total + ' cards are done. Some took a few tries, which is how real learning happens. Another round will lock them in.',
+  };
 }
 
 export function render(root) {
@@ -262,7 +282,7 @@ export function render(root) {
       if (selected) {
         className = 'chip chip--active';
       }
-      chipsHtml += `<button class="${className}" type="button" data-id="${category.id}" data-name="${escapeHtml(category.name)}" aria-pressed="${selected}">${escapeHtml(getTopicLabel(category))}</button>`;
+      chipsHtml += `< class="${className}" type="button" data-id="${category.id}" data-name="${escapeHtml(category.name)}" aria-pressed="${selected}">${topicIconHtml(category.id, 30)}<span>${escapeHtml(getTopicLabel(category))}</span></button>`;
     }
 
     if (result.hiddenCount > 0) {
@@ -328,17 +348,41 @@ export function render(root) {
     drawStats();
 
     if (state.flashQueue.length === 0) {
+      const finish = getFinishMessage(state.flashTotal, state.flashAgain);
+      const topicLabel = escapeHtml(getTopicLabel(state.selectedCategory));
       body.innerHTML = `
         <div class="flash-done">
-          <h2>Deck complete</h2>
-          <p>You got all ${state.flashTotal} cards.</p>
-          <p>You chose Review again ${state.flashAgain} times.</p>
-          <button class="btn btn--primary" id="study-again" type="button">Study new cards</button>
+          <span class="flash-done-icon">${ICONS.trophy}</span>
+          <p class="flash-done-kicker">Deck complete</p>
+          <h2 class="flash-done-title">${finish.title}</h2>
+          <p class="flash-done-text">${finish.text}</p>
+          <ul class="flash-done-facts">
+            <li class="flash-done-fact">
+              <strong>${state.flashTotal}</strong>
+              <span>Cards mastered</span>
+            </li>
+            <li class="flash-done-fact">
+              <strong>${state.flashAgain}</strong>
+              <span>Review again taps</span>
+            </li>
+          </ul>
+          <h3 class="flash-done-question">What would you like to do next?</h3>
+          <div class="flash-done-actions">
+            <button class="btn btn--primary" id="continue-topic" type="button">
+              ${ICONS.refresh} Retake ${topicLabel}
+            </button>
+            <button class="btn btn--outline" id="new-topic" type="button">
+              ${ICONS.deck} Pick a new topic
+            </button>
+          </div>
         </div>
       `;
-      body.querySelector('#study-again').addEventListener('click', function () {
+      body.querySelector('#continue-topic').addEventListener('click', function () {
         resetFlashcards();
         loadDeck();
+      });
+      body.querySelector('#new-topic').addEventListener('click', function () {
+        goTo('decks');
       });
       return;
     }

@@ -2,6 +2,7 @@ import { getState } from '../state.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, getLetter } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { topicIconHtml } from '../topic-icon.js';
 
 function getItems() {
   const state = getState();
@@ -89,7 +90,7 @@ export function render(root) {
   const items = getItems();
 
   if (items.length === 0) {
-        root.innerHTML = `
+    root.innerHTML = `
       <section class="review review-empty">
         <div class="review-empty-card">
           <span class="review-empty-icon">${ICONS.eye}</span>
@@ -129,15 +130,12 @@ export function render(root) {
   root.innerHTML = `
     <section class="review">
       <header class="review-header">
-        <button class="review-back" id="review-back" type="button" aria-label="Back to results">
-          ${ICONS.back}
-        </button>
         <div>
           <h1>Review Answers</h1>
           <p class="review-subtitle">See how you did and learn from your mistakes.</p>
         </div>
       </header>
-      <span class="review-topic">${escapeHtml(getState().selectedCategory.name)}</span>
+      <span class="review-topic">${topicIconHtml(getState().selectedCategory.id, 28)}<span>${escapeHtml(getState().selectedCategory.name)}</span></span>
       <div class="review-tabs">
         <button class="review-tab" id="tab-all" type="button" aria-pressed="true">
           All <span class="review-count">${items.length}</span>
@@ -180,9 +178,6 @@ export function render(root) {
   missedTab.addEventListener('click', function () {
     tab = 'missed';
     showList();
-  });
-  root.querySelector('#review-back').addEventListener('click', function () {
-    goTo('results');
   });
 
   showList();

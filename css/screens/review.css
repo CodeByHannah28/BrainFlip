@@ -33,8 +33,11 @@
 }
 
 .review-topic {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
   justify-self: start;
-  padding: var(--space-2) var(--space-4);
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
   border-radius: var(--radius-pill);
   background: var(--color-timer-bg);
   color: var(--color-brand);

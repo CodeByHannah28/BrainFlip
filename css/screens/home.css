@@ -157,7 +157,6 @@
   background: var(--color-timer-bg);
 }
 
-/* The topic grid and the "show all" button sit in one block */
 #home-content {
   display: grid;
   gap: var(--space-4);

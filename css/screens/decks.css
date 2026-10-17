@@ -94,8 +94,8 @@
 
 .deck-footer {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+  flex-direction: column;
+  align-items: flex-start;
   gap: var(--space-3);
   margin-top: var(--space-2);
 }
@@ -122,25 +122,30 @@
 
 .deck-actions {
   display: flex;
-  flex: none;
+  flex-wrap: wrap;
   gap: var(--space-2);
 }
 
 .deck-action {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 var(--space-4);
   border: 2px solid var(--color-brand);
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--color-surface);
   color: var(--color-brand);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  white-space: nowrap;
   cursor: pointer;
 }
 
 .deck-action svg {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
 }
 
 .deck-action:hover {

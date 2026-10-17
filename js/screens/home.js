@@ -243,9 +243,14 @@ export function render(root) {
 
   function handleTopicClick(event) {
     const id = Number(event.currentTarget.dataset.id);
-    for (let i = 0; i < categories.length; i++) {
-      if (categories[i].id === id) {
-        setState({ selectedCategory: { id: id, name: categories[i].name } });
+    const current = getState().selectedCategory;
+    if (current && current.id === id) {
+      setState({ selectedCategory: null });
+    } else {
+      for (let i = 0; i < categories.length; i++) {
+        if (categories[i].id === id) {
+          setState({ selectedCategory: { id: id, name: categories[i].name } });
+        }
       }
     }
     showTopics();

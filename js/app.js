@@ -1,4 +1,5 @@
 import { setupAuthUi } from './auth-ui.js';
+import { goTo } from './nav.js';
 import * as home from './screens/home.js';
 import * as flashcards from './screens/flashcards.js';
 import * as quiz from './screens/quiz.js';
@@ -17,7 +18,9 @@ const routes = {
   progress: { title: 'Progress', screen: progress },
 };
 
-const screenRoot = document.getElementById('screen');
+const screenMain = document.getElementById('screen');
+const screenRoot = document.getElementById('screen-body');
+const pageBack = document.getElementById('page-back');
 const menuBtn = document.getElementById('menu-btn');
 const closeBtn = document.getElementById('close-btn');
 const scrim = document.getElementById('scrim');
@@ -59,6 +62,7 @@ function renderRoute() {
   cleanup = route.screen.render(screenRoot);
 
   document.title = route.title + ' | BrainFlip';
+  pageBack.hidden = name === 'home';
 
   const links = document.querySelectorAll('[data-route]');
   for (let i = 0; i < links.length; i++) {
@@ -71,10 +75,14 @@ function renderRoute() {
 
   closeMenu();
   if (!firstRender) {
-    screenRoot.focus();
+    screenMain.focus();
   }
   firstRender = false;
 }
+
+pageBack.addEventListener('click', function () {
+  goTo('home');
+});
 
 menuBtn.addEventListener('click', openMenu);
 

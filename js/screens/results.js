@@ -6,6 +6,7 @@ import { saveQuizResult } from '../database.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, formatDuration } from '../helpers.js';
 import { ICONS } from '../icons.js';
+import { topicIconHtml } from '../topic-icon.js';
 
 function getSummary() {
   const state = getState();
@@ -64,9 +65,6 @@ export function render(root) {
     root.innerHTML = `
       <section class="results results-empty">
         <header class="results-header">
-          <button class="results-back" id="results-back" type="button" aria-label="Back to home">
-            ${ICONS.back}
-          </button>
           <div>
             <h1>Quiz Results</h1>
             <p class="results-subtitle">Your scores will show up here.</p>
@@ -124,9 +122,6 @@ export function render(root) {
     emptyImage.addEventListener('error', function () {
       emptyImage.hidden = true;
     });
-    root.querySelector('#results-back').addEventListener('click', function () {
-      goTo('home');
-    });
     root.querySelector('#results-start').addEventListener('click', function () {
       goTo('home');
     });
@@ -145,9 +140,6 @@ export function render(root) {
   root.innerHTML = `
     <section class="results">
       <header class="results-header">
-        <button class="results-back" id="results-back" type="button" aria-label="Back to home">
-          ${ICONS.back}
-        </button>
         <div>
           <h1>Quiz Results</h1>
           <p class="results-subtitle">
@@ -213,7 +205,7 @@ export function render(root) {
 
       <div class="results-actions">
         <button class="btn btn--primary" id="results-view" type="button">
-          ${ICONS.eye} View Questions
+          ${ICONS.eye} Review Answers
         </button>
         <button class="btn btn--outline" id="results-retake" type="button">
           ${ICONS.retake} Retake Quiz
@@ -304,7 +296,8 @@ export function render(root) {
     let html = `
       <li>
         <button class="results-chip" type="button" data-id="${summary.category.id}" data-name="${escapeHtml(summary.category.name)}" aria-pressed="true">
-          ${escapeHtml(summary.category.name)}
+          ${topicIconHtml(summary.category.id, 26)}
+          <span>${escapeHtml(summary.category.name)}</span>
         </button>
       </li>
     `;
@@ -316,7 +309,8 @@ export function render(root) {
       html += `
         <li>
           <button class="results-chip" type="button" data-id="${categories[i].id}" data-name="${escapeHtml(categories[i].name)}" aria-pressed="false">
-            ${escapeHtml(categories[i].name)}
+            ${topicIconHtml(categories[i].id, 26)}
+            <span>${escapeHtml(categories[i].name)}</span>
           </button>
         </li>
       `;
@@ -344,9 +338,6 @@ export function render(root) {
     startQuizWith({ id: Number(button.dataset.id), name: button.dataset.name });
   }
 
-  root.querySelector('#results-back').addEventListener('click', function () {
-    goTo('home');
-  });
   root.querySelector('#results-view').addEventListener('click', function () {
     goTo('review');
   });

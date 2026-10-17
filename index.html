@@ -19,6 +19,7 @@
     <link rel="stylesheet" href="css/tokens.css" />
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/shell.css" />
+    <link rel="stylesheet" href="css/back.css" />
     <link rel="stylesheet" href="css/screens/home.css" />
     <link rel="stylesheet" href="css/screens/decks.css" />
     <link rel="stylesheet" href="css/screens/quiz.css" />
@@ -177,7 +178,14 @@
       </div>
     </aside>
 
-    <main class="screen" id="screen" tabindex="-1"></main>
+    <main class="screen" id="screen" tabindex="-1">
+      <button class="page-back" id="page-back" type="button" aria-label="Back to home" hidden>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 18l-6-6 6-6" />
+        </svg>
+      </button>
+      <div id="screen-body"></div>
+    </main>
 
     <script type="module" src="js/app.js"></script>
   </body>

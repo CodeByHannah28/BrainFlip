@@ -3,7 +3,9 @@ import { getUser, isAuthReady, onUserChange, signInWithGoogle } from '../auth.js
 import { loadProgress } from '../database.js';
 import { escapeHtml, formatDate, formatDuration, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
-import { getTopicData } from '../../data/topics.js';
+import { topicIconHtml } from '../topic-icon.js';
+
+const PASS_MARK = 50;
 
 const TREND_ICON =
   '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8M15 7h6v6" /></svg>';
@@ -11,14 +13,8 @@ const TREND_ICON =
 const DEVICE_ICON =
   '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M8 20h8M12 16v4" /></svg>';
 
-function getScoreClass(percent) {
-  if (percent >= 70) {
-    return 'progress-badge--good';
-  }
-  if (percent >= 40) {
-    return 'progress-badge--ok';
-  }
-  return 'progress-badge--low';
+function isPass(percent) {
+  return percent >= PASS_MARK;
 }
 
 export function render(root) {
@@ -49,7 +45,7 @@ export function render(root) {
           <ul class="progress-perks">
             <li class="progress-perk"><span class="progress-perk-icon">${ICONS.trophy}</span><span>Quiz scores</span></li>
             <li class="progress-perk"><span class="progress-perk-icon">${ICONS.deck}</span><span>Flashcard progress</span></li>
-            <li class="progress-perk"><span class="progress-perk-icon">${ICONS.clock}</span><span>Study time</span></li>
+            <li class="progress-perk"><span class="progress-perk-icon">${DEVICE_ICON}</span><span>Any device</span></li>
           </ul>
           <button class="btn btn--primary progress-guest-btn" id="progress-sign-in" type="button">
             <span class="progress-google">G</span> Sign in with Google
@@ -86,14 +82,21 @@ export function render(root) {
     }
     for (let i = 0; i < quizzes.length; i++) {
       const quiz = quizzes[i];
+      const passed = isPass(quiz.percent);
+      const scoreClass = passed ? 'progress-score--pass' : 'progress-score--fail';
+      const scoreWord = passed ? 'Passed' : 'Failed';
       quizHtml += `
         <li class="progress-row">
-          <span class="progress-badge ${getScoreClass(quiz.percent)}">${quiz.percent}%</span>
+          ${topicIconHtml(quiz.categoryId, 48)}
           <div class="progress-row-main">
             <span class="progress-row-name">${escapeHtml(quiz.category)}</span>
             <span class="progress-row-detail">${quiz.correct} of ${quiz.total} correct, ${formatDuration(quiz.timeUsedSeconds)}</span>
+            <span class="progress-row-date">${escapeHtml(formatDate(quiz.createdAt))}</span>
           </div>
-          <span class="progress-row-date">${escapeHtml(formatDate(quiz.createdAt))}</span>
+          <span class="progress-score ${scoreClass}">
+            <strong>${quiz.percent}%</strong>
+            <span>${scoreWord}</span>
+          </span>
         </li>
       `;
     }
@@ -104,17 +107,14 @@ export function render(root) {
     }
     for (let i = 0; i < flashcards.length; i++) {
       const deck = flashcards[i];
-      const topic = getTopicData(deck.id);
       cardsHtml += `
-        <li class="progress-row">
-          <span class="progress-badge" style="background: ${topic.tile}; color: ${topic.color};">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${topic.path}</svg>
-          </span>
+        <li class="progress-row progress-row--deck">
+          ${topicIconHtml(deck.id, 48)}
           <div class="progress-row-main">
             <span class="progress-row-name">${escapeHtml(deck.category)}</span>
             <span class="progress-row-detail">${deck.gotIt || 0} got it, ${deck.reviewAgain || 0} marked review again</span>
+            <span class="progress-row-date">${escapeHtml(formatDate(deck.updatedAt))}</span>
           </div>
-          <span class="progress-row-date">${escapeHtml(formatDate(deck.updatedAt))}</span>
         </li>
       `;
     }
@@ -137,6 +137,7 @@ export function render(root) {
           <span class="progress-stat-label">Best</span>
         </div>
       </div>
+      <p class="progress-legend">Pass mark: ${PASS_MARK}% or higher.</p>
       <section class="progress-section">
         <h2>Recent quizzes</h2>
         <ul class="progress-list">${quizHtml}</ul>

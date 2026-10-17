@@ -14,17 +14,14 @@ function writeLocal(list) {
   try {
     localStorage.setItem(LOCAL_KEY, JSON.stringify(list));
   } catch {
-    // storage full or blocked: ignore
+    
   }
 }
 
-// The agreed score shape
 export function buildScore({ topic, correct, wrong, timeUsedSeconds }) {
   return { topic, correct, wrong, timeUsedSeconds, date: new Date().toISOString() };
 }
 
-// Tries the backend first. If it fails, keeps the score on this device.
-// Returns { saved: 'backend' } or { saved: 'local' }.
 export async function saveScore(score) {
   try {
     const response = await fetch(`${SETTINGS.backendBase}/api/scores`, {
@@ -41,7 +38,6 @@ export async function saveScore(score) {
   }
 }
 
-// Returns a list of scores in the same shape
 export async function loadScores() {
   try {
     const response = await fetch(`${SETTINGS.backendBase}/api/scores`);
