@@ -156,6 +156,15 @@
   border: 6px solid var(--color-correct);
 }
 
+.review-option--answer {
+  background: var(--color-correct-bg);
+  color: var(--color-correct-text);
+}
+
+.review-option--answer .review-radio {
+  border: 2px solid var(--color-correct);
+}
+
 .review-option--wrong {
   background: var(--color-wrong-bg);
   color: var(--color-wrong-text);
