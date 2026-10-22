@@ -112,7 +112,7 @@ export function render(root) {
           <span class="progress-stat-label">Best</span>
         </div>
       </div>
-      <p class="progress-legend">Pass mark: ${PASS_MARK}% or higher.</p>
+      <p class="progress-legend">Pass mark: ${PASS_MARK}%.</p>
       <section class="progress-section">
         <h2>Recent quizzes</h2>
         <ul class="progress-list">${quizHtml}</ul>
