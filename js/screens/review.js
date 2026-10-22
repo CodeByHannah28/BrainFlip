@@ -28,6 +28,8 @@ function makeItemHtml(item) {
       className = 'review-option review-option--correct';
     } else if (i === answer.pickedIndex) {
       className = 'review-option review-option--wrong';
+    } else if (i === question.correctIndex) {
+      className = 'review-option review-option--answer';
     }
     optionsHtml += `
       <li class="${className}">
