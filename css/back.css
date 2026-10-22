@@ -18,3 +18,64 @@
 .page-back:hover {
   background: var(--color-timer-bg);
 }
+
+.confirm-dialog {
+  width: min(440px, calc(100vw - 32px));
+  margin: auto;
+  padding: var(--space-5);
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lift);
+  text-align: center;
+}
+
+.confirm-dialog::backdrop {
+  background: rgba(42, 26, 18, 0.5);
+}
+
+.confirm-dialog[open] {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+}
+
+.confirm-icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-timer-bg);
+  color: var(--color-brand);
+}
+
+.confirm-icon svg {
+  width: 26px;
+  height: 26px;
+}
+
+.confirm-title {
+  margin: 0;
+  font-size: var(--text-lg);
+}
+
+.confirm-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.confirm-actions {
+  display: grid;
+  gap: var(--space-3);
+  width: 100%;
+  margin-top: var(--space-2);
+}
+
+.confirm-actions .btn {
+  width: 100%;
+  min-height: 48px;
+}

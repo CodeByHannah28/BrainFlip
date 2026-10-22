@@ -1,5 +1,7 @@
 import { setupAuthUi } from './auth-ui.js';
 import { goTo } from './nav.js';
+import { getState, resetQuiz } from './state.js';
+import { askToLeaveQuiz } from './confirm.js';
 import * as home from './screens/home.js';
 import * as flashcards from './screens/flashcards.js';
 import * as quiz from './screens/quiz.js';
@@ -29,6 +31,8 @@ const brandLinks = document.querySelectorAll('.brand-link');
 
 let cleanup = null;
 let firstRender = true;
+let currentRoute = null;
+let asking = false;
 
 function openMenu() {
   document.body.classList.add('nav-open');
@@ -51,9 +55,15 @@ function getRouteName() {
   return 'home';
 }
 
+function isQuizRunning() {
+  const state = getState();
+  return currentRoute === 'quiz' && state.questions.length > 0 && !state.finished;
+}
+
 function renderRoute() {
   const name = getRouteName();
   const route = routes[name];
+  currentRoute = name;
 
   if (typeof cleanup === 'function') {
     cleanup();
@@ -113,7 +123,38 @@ document.addEventListener('keydown', function (event) {
   }
 });
 
-window.addEventListener('hashchange', renderRoute);
+function handleHashChange() {
+  const target = getRouteName();
+  if (!isQuizRunning() || target === 'quiz') {
+    renderRoute();
+    return;
+  }
+
+  const targetHash = location.hash;
+  history.replaceState(null, '', '#/quiz');
+  closeMenu();
+  if (asking) {
+    return;
+  }
+
+  asking = true;
+  askToLeaveQuiz().then(function (leave) {
+    asking = false;
+    if (leave) {
+      resetQuiz();
+      location.hash = targetHash || '#/home';
+    }
+  });
+}
+
+window.addEventListener('hashchange', handleHashChange);
+
+window.addEventListener('beforeunload', function (event) {
+  if (isQuizRunning()) {
+    event.preventDefault();
+    event.returnValue = '';
+  }
+});
 
 setupAuthUi();
 renderRoute();
