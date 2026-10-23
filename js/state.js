@@ -9,6 +9,7 @@ function createState() {
     answers: [],
     currentIndex: 0,
     timeUsedSeconds: 0,
+    questionTimes: {},
     finished: false,
     resultSaved: false,
     flashCategoryId: null,
@@ -35,6 +36,7 @@ export function resetQuiz() {
     answers: [],
     currentIndex: 0,
     timeUsedSeconds: 0,
+    questionTimes: {},
     finished: false,
     resultSaved: false,
   });

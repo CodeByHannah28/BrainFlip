@@ -282,7 +282,7 @@ export function render(root) {
       if (selected) {
         className = 'chip chip--active';
       }
-      chipsHtml += `< class="${className}" type="button" data-id="${category.id}" data-name="${escapeHtml(category.name)}" aria-pressed="${selected}">${topicIconHtml(category.id, 30)}<span>${escapeHtml(getTopicLabel(category))}</span></button>`;
+      chipsHtml += `<button class="${className}" type="button" data-id="${category.id}" data-name="${escapeHtml(category.name)}" aria-pressed="${selected}">${topicIconHtml(category.id, 30)}<span>${escapeHtml(getTopicLabel(category))}</span></button>`;
     }
 
     if (result.hiddenCount > 0) {

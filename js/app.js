@@ -1,7 +1,8 @@
 import { setupAuthUi } from './auth-ui.js';
 import { goTo } from './nav.js';
-import { getState, resetQuiz } from './state.js';
-import { askToLeaveQuiz } from './confirm.js';
+import { getState, resetQuiz, resetFlashcards } from './state.js';
+import { askToLeave } from './confirm.js';
+import { showToast } from './toast.js';
 import * as home from './screens/home.js';
 import * as flashcards from './screens/flashcards.js';
 import * as quiz from './screens/quiz.js';
@@ -55,9 +56,15 @@ function getRouteName() {
   return 'home';
 }
 
-function isQuizRunning() {
+function getActiveSession() {
   const state = getState();
-  return currentRoute === 'quiz' && state.questions.length > 0 && !state.finished;
+  if (currentRoute === 'quiz' && state.questions.length > 0 && !state.finished) {
+    return 'quiz';
+  }
+  if (currentRoute === 'flashcards' && state.flashTotal > 0 && state.flashQueue.length > 0) {
+    return 'flashcards';
+  }
+  return null;
 }
 
 function renderRoute() {
@@ -124,25 +131,42 @@ document.addEventListener('keydown', function (event) {
 });
 
 function handleHashChange() {
+  const session = getActiveSession();
   const target = getRouteName();
-  if (!isQuizRunning() || target === 'quiz') {
+  if (!session || target === currentRoute) {
     renderRoute();
     return;
   }
 
   const targetHash = location.hash;
-  history.replaceState(null, '', '#/quiz');
+  history.replaceState(null, '', '#/' + currentRoute);
   closeMenu();
   if (asking) {
     return;
   }
 
   asking = true;
-  askToLeaveQuiz().then(function (leave) {
+  askToLeave(session).then(function (leave) {
     asking = false;
-    if (leave) {
+    if (!leave) {
+      return;
+    }
+    if (session === 'quiz') {
       resetQuiz();
-      location.hash = targetHash || '#/home';
+    } else {
+      resetFlashcards();
+    }
+    location.hash = targetHash || '#/home';
+    if (session === 'quiz') {
+      showToast(
+        'Quiz ended',
+        'Your score and answers were not recorded. You can start a new quiz whenever you are ready.',
+      );
+    } else {
+      showToast(
+        'Flashcard session ended',
+        'Your place in this deck was not saved, so you will start from the beginning next time.',
+      );
     }
   });
 }
@@ -150,7 +174,7 @@ function handleHashChange() {
 window.addEventListener('hashchange', handleHashChange);
 
 window.addEventListener('beforeunload', function (event) {
-  if (isQuizRunning()) {
+  if (getActiveSession()) {
     event.preventDefault();
     event.returnValue = '';
   }

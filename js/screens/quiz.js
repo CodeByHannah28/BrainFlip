@@ -130,9 +130,20 @@ export function render(root) {
     }
   }
 
+  function getRemaining(index) {
+    const times = getState().questionTimes || {};
+    if (typeof times[index] === 'number') {
+      return times[index];
+    }
+    return SETTINGS.secondsPerQuestion;
+  }
+
   function tick() {
+    const current = getState();
     secondsLeft = secondsLeft - 1;
-    setState({ timeUsedSeconds: getState().timeUsedSeconds + 1 });
+    const times = Object.assign({}, current.questionTimes);
+    times[current.currentIndex] = secondsLeft;
+    setState({ timeUsedSeconds: current.timeUsedSeconds + 1, questionTimes: times });
     timerBox.lastElementChild.textContent = formatClock(secondsLeft);
 
     if (secondsLeft <= 10) {
@@ -202,7 +213,8 @@ export function render(root) {
       noteHtml = '<p class="quiz-note">Time is up. No answer was recorded for this question.</p>';
     }
 
-    let timerText = formatClock(SETTINGS.secondsPerQuestion);
+    const remaining = getRemaining(index);
+    let timerText = formatClock(remaining);
     if (answer) {
       timerText = formatClock(answer.secondsLeft);
     }
@@ -284,7 +296,10 @@ export function render(root) {
 
     timerBox = root.querySelector('#quiz-timer');
     if (!answer) {
-      secondsLeft = SETTINGS.secondsPerQuestion;
+      secondsLeft = remaining;
+      if (secondsLeft <= 10) {
+        timerBox.classList.add('quiz-timer--low');
+      }
       timerId = setInterval(tick, 1000);
     }
   }
