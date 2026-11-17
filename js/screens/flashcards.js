@@ -1,11 +1,12 @@
 import { getCategories, loadCards } from '../api.js';
-import { MESSAGES } from '../config.js';
+import { SETTINGS, MESSAGES } from '../config.js';
 import { getState, setState, resetFlashcards } from '../state.js';
 import { saveFlashcardResult } from '../database.js';
 import { goTo } from '../nav.js';
-import { escapeHtml, showLoading, showError } from '../helpers.js';
+import { escapeHtml, formatClock, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
 import { openTopicDialog } from '../dialog.js';
+import { getFlashcardRules, rulesHtml, bindRules } from '../rules.js';
 import { TOPICS, getTopicData } from '../../data/topics.js';
 import { topicIconHtml } from '../topic-icon.js';
 
@@ -48,6 +49,37 @@ export function render(root) {
   let active = true;
   let categories = [];
   let flipped = false;
+  let cardTimerId = null;
+  let cardEndsAt = 0;
+
+  function stopCardTimer() {
+    clearInterval(cardTimerId);
+    cardTimerId = null;
+  }
+
+  function startCardTimer() {
+    stopCardTimer();
+    cardEndsAt = Date.now() + SETTINGS.secondsPerQuestion * 1000;
+    cardTimerId = setInterval(tickCardTimer, 250);
+  }
+
+  function tickCardTimer() {
+    const left = Math.max(0, Math.ceil((cardEndsAt - Date.now()) / 1000));
+    const text = root.querySelector('#flash-timer-text');
+    const box = root.querySelector('#flash-timer');
+    if (!text || !box) {
+      stopCardTimer();
+      return;
+    }
+    text.textContent = formatClock(left);
+    box.classList.toggle('quiz-timer--low', left <= 10);
+    if (left <= 0) {
+      stopCardTimer();
+      if (!flipped) {
+        flipCard();
+      }
+    }
+  }
 
   function getMainCategories() {
     const main = [];
@@ -147,12 +179,13 @@ export function render(root) {
               <span>Difficulty</span>
             </li>
             <li class="quiz-start-fact">
-              <strong>Flip</strong>
-              <span>Study style</span>
+              <strong>${SETTINGS.secondsPerQuestion}s</strong>
+              <span>Per card</span>
             </li>
           </ul>
+          ${rulesHtml(getFlashcardRules())}
           <div class="quiz-start-actions">
-            <button class="btn btn--primary" id="begin-study" type="button">
+            <button class="btn btn--primary" id="begin-study" type="button" disabled>
               ${ICONS.play} Start Studying
             </button>
             <button class="btn btn--outline" id="change-topic" type="button">Change topic</button>
@@ -160,7 +193,9 @@ export function render(root) {
         </div>
       </section>
     `;
-    root.querySelector('#begin-study').addEventListener('click', startStudy);
+    const beginButton = root.querySelector('#begin-study');
+    bindRules(root, beginButton);
+    beginButton.addEventListener('click', startStudy);
     root.querySelector('#change-topic').addEventListener('click', function () {
       goTo('home');
     });
@@ -344,6 +379,7 @@ export function render(root) {
   function drawBody() {
     const state = getState();
     const body = root.querySelector('#flash-body');
+    stopCardTimer();
     drawProgress();
     drawStats();
 
@@ -401,7 +437,12 @@ export function render(root) {
       answerLongClass = ' flip-answer--long';
     }
 
+    const timerLeft = SETTINGS.secondsPerQuestion;
+
     body.innerHTML = `
+      <div class="flash-timer-row" style="display: flex; justify-content: center; margin-bottom: var(--space-3);">
+        <span class="quiz-timer" id="flash-timer" role="timer" aria-label="Time to think about this card">${ICONS.clock}<span id="flash-timer-text">${formatClock(timerLeft)}</span></span>
+      </div>
       <div class="flash-stage">
         <div class="flip-scene">
           <div class="flip-card ${flippedClass}" id="flip-card" role="button" tabindex="0">
@@ -450,11 +491,18 @@ export function render(root) {
     body.querySelector('#next-card').addEventListener('click', nextCard);
     body.querySelector('#review-again').addEventListener('click', reviewAgain);
     body.querySelector('#got-it').addEventListener('click', gotIt);
+
+    if (!flipped) {
+      startCardTimer();
+    }
   }
 
   function flipCard() {
     flipped = !flipped;
     root.querySelector('#flip-card').classList.toggle('flipped');
+    if (flipped) {
+      stopCardTimer();
+    }
   }
 
   function handleCardKey(event) {
@@ -546,6 +594,7 @@ export function render(root) {
 
   return function () {
     active = false;
+    stopCardTimer();
     document.removeEventListener('keydown', handleKey);
   };
 }
