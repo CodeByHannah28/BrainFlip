@@ -31,11 +31,24 @@ function getSummary() {
     category: state.selectedCategory,
     total: total,
     answered: answered,
+    skipped: total - answered,
     correct: correct,
-    wrong: total - correct,
+    wrong: answered - correct,
     percent: Math.round((correct / total) * 100),
     timeUsedSeconds: state.timeUsedSeconds,
+    endReason: state.endReason,
+    mode: state.mode,
   };
+}
+
+function getBanner(reason) {
+  if (reason === 'time') {
+    return '<p class="quiz-note">Time ran out. Your quiz was submitted automatically with the answers you chose. Unanswered questions scored zero.</p>';
+  }
+  if (reason === 'tab') {
+    return '<p class="quiz-note">Your quiz ended because you left the quiz page again after a warning. Your answers so far were submitted.</p>';
+  }
+  return '';
 }
 
 function getFeedback(percent) {
@@ -147,6 +160,8 @@ export function render(root) {
           </p>
         </div>
       </header>
+
+      ${getBanner(summary.endReason)}
 
       <div class="results-summary card">
         <div class="results-ring" role="img" aria-label="Your score: ${summary.percent} percent">
@@ -265,8 +280,10 @@ export function render(root) {
         answered: summary.answered,
         correct: summary.correct,
         wrong: summary.wrong,
+        skipped: summary.skipped,
         percent: summary.percent,
         timeUsedSeconds: summary.timeUsedSeconds,
+        endedBy: summary.endReason || 'submitted',
       });
       setState({ resultSaved: true });
       if (active) {

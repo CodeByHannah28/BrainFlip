@@ -1,0 +1,122 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function pad(n) {
+      return (n < 10 ? '0' : '') + string(n);
+    }
+
+    function todayId() {
+      return string(request.time.year()) + '-' + pad(request.time.month()) + '-' + pad(request.time.day());
+    }
+
+    function validStreakFields(d) {
+      return (!('currentStreak' in d) || (d.currentStreak is int && d.currentStreak >= 0 && d.currentStreak <= 3650))
+        && (!('longestStreak' in d) || (d.longestStreak is int && d.longestStreak >= 0 && d.longestStreak <= 3650))
+        && (!('lastPlayedDate' in d) || (d.lastPlayedDate is string && d.lastPlayedDate.size() == 10))
+        && d.get('longestStreak', 0) >= d.get('currentStreak', 0);
+    }
+
+    function validUserDoc(d) {
+      return d.keys().hasOnly(['email', 'displayName', 'photoURL', 'currentStreak', 'longestStreak', 'lastPlayedDate'])
+        && (!('displayName' in d) || (d.displayName is string && d.displayName.size() >= 1 && d.displayName.size() <= 30))
+        && validStreakFields(d);
+    }
+
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create: if isOwner(uid) && validUserDoc(request.resource.data);
+      allow update: if isOwner(uid)
+        && validUserDoc(request.resource.data)
+        && request.resource.data.get('currentStreak', 0) <= resource.data.get('currentStreak', 0) + 1;
+      allow delete: if false;
+
+      match /quizzes/{quizId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid);
+        allow update, delete: if false;
+      }
+
+      match /flashcards/{cardId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid);
+        allow delete: if false;
+      }
+    }
+
+    match /scores/{scoreId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll(['uid', 'displayName', 'topic', 'correct', 'total', 'timeUsedSeconds', 'createdAt'])
+        && request.resource.data.keys().hasOnly(['uid', 'displayName', 'topic', 'difficulty', 'correct', 'total', 'timeUsedSeconds', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() >= 1
+        && request.resource.data.displayName.size() <= 30
+        && request.resource.data.topic is string
+        && request.resource.data.topic.size() <= 60
+        && request.resource.data.total is int
+        && request.resource.data.total >= 1
+        && request.resource.data.total <= 50
+        && request.resource.data.correct is int
+        && request.resource.data.correct >= 0
+        && request.resource.data.correct <= request.resource.data.total
+        && request.resource.data.timeUsedSeconds is int
+        && request.resource.data.timeUsedSeconds >= 0
+        && request.resource.data.timeUsedSeconds <= 86400
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+    }
+
+    match /dailyChallenges/{dateId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn()
+        && dateId == todayId()
+        && request.resource.data.keys().hasOnly(['name', 'date', 'questions', 'createdBy', 'createdAt'])
+        && request.resource.data.keys().hasAll(['name', 'date', 'questions', 'createdBy', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 60
+        && request.resource.data.date == dateId
+        && request.resource.data.questions is list
+        && request.resource.data.questions.size() >= 1
+        && request.resource.data.questions.size() <= 50
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+
+      match /entries/{uid} {
+        allow read: if isSignedIn();
+        allow create: if isOwner(uid)
+          && dateId == todayId()
+          && exists(/databases/$(database)/documents/dailyChallenges/$(dateId))
+          && request.resource.data.keys().hasOnly(['uid', 'displayName', 'correct', 'total', 'timeUsedSeconds', 'createdAt'])
+          && request.resource.data.keys().hasAll(['uid', 'displayName', 'correct', 'total', 'timeUsedSeconds', 'createdAt'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.displayName is string
+          && request.resource.data.displayName.size() >= 1
+          && request.resource.data.displayName.size() <= 30
+          && request.resource.data.total is int
+          && request.resource.data.total >= 1
+          && request.resource.data.total <= 50
+          && request.resource.data.correct is int
+          && request.resource.data.correct >= 0
+          && request.resource.data.correct <= request.resource.data.total
+          && request.resource.data.timeUsedSeconds is int
+          && request.resource.data.timeUsedSeconds >= 0
+          && request.resource.data.timeUsedSeconds <= 86400
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+    }
+  }
+}

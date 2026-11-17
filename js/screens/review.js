@@ -7,13 +7,17 @@ import { topicIconHtml } from '../topic-icon.js';
 function getItems() {
   const state = getState();
   const items = [];
+  if (!state.finished) {
+    return items;
+  }
   for (let i = 0; i < state.questions.length; i++) {
-    const answer = state.answers[i];
-    if (answer) {
-      items.push({ number: i + 1, question: state.questions[i], answer: answer });
-    }
+    items.push({ number: i + 1, question: state.questions[i], answer: state.answers[i] || null });
   }
   return items;
+}
+
+function isMissed(item) {
+  return !item.answer || !item.answer.isCorrect;
 }
 
 function makeItemHtml(item) {
@@ -24,9 +28,9 @@ function makeItemHtml(item) {
   let optionsHtml = '';
   for (let i = 0; i < question.options.length; i++) {
     let className = 'review-option';
-    if (i === answer.pickedIndex && answer.isCorrect) {
+    if (answer && i === answer.pickedIndex && answer.isCorrect) {
       className = 'review-option review-option--correct';
-    } else if (i === answer.pickedIndex) {
+    } else if (answer && i === answer.pickedIndex) {
       className = 'review-option review-option--wrong';
     } else if (i === question.correctIndex) {
       className = 'review-option review-option--answer';
@@ -42,24 +46,24 @@ function makeItemHtml(item) {
   const correctText = getLetter(question.correctIndex) + '. ' + question.options[question.correctIndex];
   let resultHtml = '';
 
-  if (answer.isCorrect) {
+  if (!answer) {
+    resultHtml = `
+      <div class="review-result review-result--wrong">
+        <span class="review-result-icon">${ICONS.cross}</span>
+        <div>
+          <strong>Not answered</strong>
+          <p>You skipped this question.</p>
+          <p>The correct answer is ${escapeHtml(correctText)}.</p>
+        </div>
+      </div>
+    `;
+  } else if (answer.isCorrect) {
     resultHtml = `
       <div class="review-result review-result--correct">
         <span class="review-result-icon">${ICONS.check}</span>
         <div>
           <strong>Correct</strong>
           <p>You selected ${getLetter(answer.pickedIndex)}. ${escapeHtml(question.options[answer.pickedIndex])}</p>
-        </div>
-      </div>
-    `;
-  } else if (answer.pickedIndex === -1) {
-    resultHtml = `
-      <div class="review-result review-result--wrong">
-        <span class="review-result-icon">${ICONS.cross}</span>
-        <div>
-          <strong>Time is up</strong>
-          <p>You did not select an answer.</p>
-          <p>The correct answer is ${escapeHtml(correctText)}.</p>
         </div>
       </div>
     `;
@@ -99,7 +103,7 @@ export function render(root) {
           <p class="review-empty-kicker">Review Answers</p>
           <h1 class="review-empty-title">No answers to review yet</h1>
           <p class="review-empty-text">
-            Finish a quiz and every question you answered will show up here, so you can learn from your mistakes.
+            Finish a quiz and every question will show up here, so you can learn from your mistakes.
           </p>
           <ol class="review-empty-steps">
             <li class="review-empty-step"><strong>1</strong><span>Take a quiz</span></li>
@@ -124,9 +128,7 @@ export function render(root) {
     return null;
   }
 
-  const missed = items.filter(function (item) {
-    return !item.answer.isCorrect;
-  });
+  const missed = items.filter(isMissed);
   let tab = 'all';
 
   root.innerHTML = `
@@ -165,7 +167,7 @@ export function render(root) {
       html += makeItemHtml(shown[i]);
     }
     if (shown.length === 0) {
-      html = '<li><p>You did not miss any questions. Great work!</p></li>';
+      html = '<li><p>You did not miss or skip any questions. Great work!</p></li>';
     }
     list.innerHTML = html;
 
