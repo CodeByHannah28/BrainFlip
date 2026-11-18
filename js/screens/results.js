@@ -44,6 +44,9 @@ function getSummary() {
 }
 
 function getBanner(reason) {
+  if (reason === 'away') {
+    return '<p class="quiz-note">Your quiz ended because you stayed away from the quiz page for more than a minute. Your answers so far were submitted.</p>';
+  }
   if (reason === 'time') {
     return '<p class="quiz-note">Time ran out. Your quiz was submitted automatically with the answers you chose. Unanswered questions scored zero.</p>';
   }
@@ -331,7 +334,7 @@ export function render(root) {
   async function submitBoard() {
     const state = getState();
     const user = getUser();
-    const cheated = summary.endReason === 'tab';
+    const cheated = summary.endReason === 'tab' || summary.endReason === 'away';
 
     if (!user) {
       boardNote.textContent = 'Sign in to put your score on the leaderboard.';

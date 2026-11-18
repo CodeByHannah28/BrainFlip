@@ -33,6 +33,8 @@ function getDifficultyLabel(value) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
+const MAX_AWAY_MS = 60 * 1000;
+
 function countAnswered(state) {
   let count = 0;
   for (let i = 0; i < state.questions.length; i++) {
@@ -46,6 +48,7 @@ function countAnswered(state) {
 export function render(root) {
   let active = true;
   let clockId = null;
+  let hiddenAt = 0;
 
   function stopClock() {
     clearInterval(clockId);
@@ -463,6 +466,7 @@ export function render(root) {
     const state = getState();
 
     if (document.hidden) {
+      hiddenAt = Date.now();
       const warnings = state.warnings + 1;
       setState({ warnings: warnings, warningSeen: false });
       if (warnings >= 2) {
@@ -471,6 +475,16 @@ export function render(root) {
       return;
     }
 
+    let awayMs = 0;
+    if (hiddenAt > 0) {
+      awayMs = Date.now() - hiddenAt;
+    }
+    hiddenAt = 0;
+
+    if (awayMs > MAX_AWAY_MS) {
+      finishQuiz('away');
+      return;
+    }
     if (getSecondsLeft() <= 0) {
       finishQuiz('time');
       return;

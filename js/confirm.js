@@ -90,7 +90,7 @@ export function showTabWarning() {
   return openConfirm(
     {
       title: 'Warning: you left the quiz page',
-      text: 'You switched away from the quiz. The timer kept running. If you leave this page again, your quiz will end immediately and your answers so far will be submitted.',
+      text: 'You switched away from the quiz, but the timer kept running. If you leave this page again, or stay away for more than a minute, your quiz will end and your answers so far will be submitted.',
       first: 'I understand, back to the quiz',
       second: '',
     },

@@ -17,13 +17,13 @@ export function getQuizRules(count, isDaily) {
     'You can skip any question and come back to it later with Previous, Next or the numbered buttons.',
     'You can change an answer at any time before the quiz ends. Your latest choice counts.',
     'Brown numbers are answered questions. White numbers are not answered yet.',
-    'Stay on this page. If you switch tabs or leave the page, you get one warning. If you do it again, the quiz ends.',
+    'Stay on this page. If you switch tabs or leave the page, you get a warning when you come back. If you leave a second time, or stay away for more than a minute, the quiz ends.',
     'When time runs out, the quiz is submitted automatically with the answers you chose. Unanswered questions score zero.',
     'Do not refresh or close the page. Doing so ends the quiz and nothing is saved.',
-    'Quizzes ended for leaving the page twice are saved to your progress, but they do not count on the leaderboard.',
+    'Quizzes ended for leaving the page are saved to your progress, but they do not count on the leaderboard.',
   ];
   if (isDaily) {
-        rules.push('You can play the daily challenge only once each day. If you leave before finishing, or it ends for leaving the page twice, you score zero for the day.');
+    rules.push('You can play the daily challenge only once each day. If you leave before finishing, or it ends for leaving the page, you score zero for the day.');
   }
   return rules;
 }
@@ -33,7 +33,7 @@ export function getFlashcardRules() {
   return [
     'Each card has its own ' + seconds + '-second timer. Use it to read the question and think of the answer.',
     'When the timer ends, the card flips by itself to show the answer. You can also flip it earlier.',
-        'Flipping the card does not stop the timer. It stops only when you press Got it.',
+    'Flipping the card does not stop the timer. It stops only when you press Got it.',
     'Moving to another card starts a fresh timer for that card.',
     'Press Got it if you knew the answer. Press Review again if you did not. Those cards come back later.',
     'Leaving the deck ends the session, and your place in the deck is not saved.',
