@@ -500,9 +500,6 @@ export function render(root) {
   function flipCard() {
     flipped = !flipped;
     root.querySelector('#flip-card').classList.toggle('flipped');
-    if (flipped) {
-      stopCardTimer();
-    }
   }
 
   function handleCardKey(event) {

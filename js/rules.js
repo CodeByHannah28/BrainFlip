@@ -33,6 +33,7 @@ export function getFlashcardRules() {
   return [
     'Each card has its own ' + seconds + '-second timer. Use it to read the question and think of the answer.',
     'When the timer ends, the card flips by itself to show the answer. You can also flip it earlier.',
+        'Flipping the card does not stop the timer. It stops only when you press Got it.',
     'Moving to another card starts a fresh timer for that card.',
     'Press Got it if you knew the answer. Press Review again if you did not. Those cards come back later.',
     'Leaving the deck ends the session, and your place in the deck is not saved.',
