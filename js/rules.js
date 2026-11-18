@@ -23,7 +23,7 @@ export function getQuizRules(count, isDaily) {
     'Quizzes ended for leaving the page twice are saved to your progress, but they do not count on the leaderboard.',
   ];
   if (isDaily) {
-    rules.push('You can play the daily challenge only once each day.');
+        rules.push('You can play the daily challenge only once each day. If you leave before finishing, or it ends for leaving the page twice, you score zero for the day.');
   }
   return rules;
 }

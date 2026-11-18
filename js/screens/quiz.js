@@ -4,6 +4,7 @@ import { getState, setState, resetQuiz } from '../state.js';
 import { goTo } from '../nav.js';
 import { askToSubmit, showTabWarning } from '../confirm.js';
 import { getQuizRules, rulesHtml, bindRules } from '../rules.js';
+import { markDailyStarted } from '../daily.js';
 import {
   escapeHtml,
   formatClock,
@@ -218,6 +219,7 @@ export function render(root) {
     const state = getState();
 
     if (state.mode === 'daily' && state.questions.length > 0 && state.quizStartedAt === 0) {
+      markDailyStarted(state.dailyId);
       startClock();
       showQuestion();
       return;

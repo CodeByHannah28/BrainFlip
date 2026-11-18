@@ -3,6 +3,8 @@ import { MESSAGES } from '../config.js';
 import { getState, setState, resetQuiz } from '../state.js';
 import { onUserChange, getUser } from '../auth.js';
 import { saveQuizResult } from '../database.js';
+import { submitScore } from '../leaderboard.js';
+import { submitDailyEntry, recordDailyStreak } from '../daily.js';
 import { goTo } from '../nav.js';
 import { escapeHtml, formatDuration } from '../helpers.js';
 import { ICONS } from '../icons.js';
@@ -49,6 +51,19 @@ function getBanner(reason) {
     return '<p class="quiz-note">Your quiz ended because you left the quiz page again after a warning. Your answers so far were submitted.</p>';
   }
   return '';
+}
+
+function getBoardText(isDaily, cheated) {
+  if (isDaily && cheated) {
+    return 'Your daily challenge ended for leaving the page, so it scored zero on the leaderboard.';
+  }
+  if (cheated) {
+    return 'Quizzes ended for leaving the page do not count on the leaderboard.';
+  }
+  if (isDaily) {
+    return 'Your score is on today\'s daily challenge leaderboard.';
+  }
+  return 'Your score is on the leaderboard.';
 }
 
 function getFeedback(percent) {
@@ -145,6 +160,17 @@ export function render(root) {
   }
 
   const feedback = getFeedback(summary.percent);
+  const isDaily = summary.mode === 'daily';
+  let secondButton = `
+        <button class="btn btn--outline" id="results-retake" type="button">
+          ${ICONS.retake} Retake Quiz
+        </button>`;
+  if (isDaily) {
+    secondButton = `
+        <button class="btn btn--outline" id="results-daily" type="button">
+          ${ICONS.calendar} Daily Challenge
+        </button>`;
+  }
   let ringClass = 'results-ring-fill';
   if (summary.percent === 0) {
     ringClass = 'results-ring-fill results-ring-fill--empty';
@@ -217,13 +243,15 @@ export function render(root) {
       </div>
 
       <p class="results-note" id="results-note"></p>
+      <p class="results-note" id="board-note"></p>
 
       <div class="results-actions">
         <button class="btn btn--primary" id="results-view" type="button">
           ${ICONS.eye} Review Answers
         </button>
-        <button class="btn btn--outline" id="results-retake" type="button">
-          ${ICONS.retake} Retake Quiz
+        ${secondButton}
+        <button class="btn btn--outline" id="results-board" type="button">
+          ${ICONS.trophy} Leaderboard
         </button>
       </div>
 
@@ -241,6 +269,7 @@ export function render(root) {
   `;
 
   const note = root.querySelector('#results-note');
+  const boardNote = root.querySelector('#board-note');
   const chipList = root.querySelector('#results-chips');
 
   const ringFill = root.querySelector('#results-ring-fill');
@@ -295,6 +324,70 @@ export function render(root) {
       setState({ resultSaved: false });
       if (active) {
         note.textContent = 'Could not save this result. Check your connection and try again.';
+      }
+    }
+  }
+
+  async function submitBoard() {
+    const state = getState();
+    const user = getUser();
+    const cheated = summary.endReason === 'tab';
+
+    if (!user) {
+      boardNote.textContent = 'Sign in to put your score on the leaderboard.';
+      return;
+    }
+    if (state.boardSubmitted === true || state.boardSubmitted === 'saving') {
+      boardNote.textContent = getBoardText(isDaily, cheated);
+      return;
+    }
+    if (!isDaily && cheated) {
+      boardNote.textContent = getBoardText(isDaily, cheated);
+      return;
+    }
+
+    setState({ boardSubmitted: 'saving' });
+    boardNote.textContent = 'Posting your score...';
+
+    try {
+      if (isDaily) {
+        let correct = summary.correct;
+        let seconds = summary.timeUsedSeconds;
+        if (cheated) {
+          correct = 0;
+          seconds = state.quizLimit;
+        }
+        await submitDailyEntry(state.dailyId, {
+          correct: correct,
+          total: summary.total,
+          timeUsedSeconds: seconds,
+        });
+        setState({ boardSubmitted: true });
+        if (!cheated) {
+          try {
+            await recordDailyStreak();
+          } catch (streakError) {
+            console.error(streakError);
+          }
+        }
+      } else {
+        await submitScore({
+          topic: summary.category.name,
+          difficulty: state.difficulty || 'any',
+          correct: summary.correct,
+          total: summary.total,
+          timeUsedSeconds: summary.timeUsedSeconds,
+        });
+        setState({ boardSubmitted: true });
+      }
+      if (active) {
+        boardNote.textContent = getBoardText(isDaily, cheated);
+      }
+    } catch (error) {
+      console.error(error);
+      setState({ boardSubmitted: false });
+      if (active) {
+        boardNote.textContent = 'Could not post your score to the leaderboard. Check your connection and try again.';
       }
     }
   }
@@ -358,12 +451,28 @@ export function render(root) {
   root.querySelector('#results-view').addEventListener('click', function () {
     goTo('review');
   });
-  root.querySelector('#results-retake').addEventListener('click', function () {
-    startQuizWith(summary.category);
+  const retakeButton = root.querySelector('#results-retake');
+  if (retakeButton) {
+    retakeButton.addEventListener('click', function () {
+      startQuizWith(summary.category);
+    });
+  }
+  const dailyButton = root.querySelector('#results-daily');
+  if (dailyButton) {
+    dailyButton.addEventListener('click', function () {
+      goTo('daily');
+    });
+  }
+  root.querySelector('#results-board').addEventListener('click', function () {
+    goTo('leaderboard');
   });
 
-  const stopListening = onUserChange(saveResult);
+  const stopListening = onUserChange(function () {
+    saveResult();
+    submitBoard();
+  });
   saveResult();
+  submitBoard();
   showChips();
 
   return function () {
