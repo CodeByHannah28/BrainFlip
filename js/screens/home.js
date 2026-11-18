@@ -2,6 +2,8 @@ import { getCategories, getCategoryCounts } from '../api.js';
 import { SETTINGS, MESSAGES } from '../config.js';
 import { getState, setState, resetQuiz, resetFlashcards } from '../state.js';
 import { goTo } from '../nav.js';
+import { getUser, isAuthReady, onUserChange } from '../auth.js';
+import { getTodayInfo, getEntry, getStreak } from '../daily.js';
 import { escapeHtml, showLoading, showError } from '../helpers.js';
 import { ICONS } from '../icons.js';
 import { createDropdown } from '../dropdown.js';
@@ -40,12 +42,83 @@ export function render(root) {
           </div>
         </div>
       </header>
+      <div id="home-daily"></div>
       <h2 class="home-heading">Choose a topic</h2>
       <div id="home-content"></div>
     </section>
   `;
 
   const content = root.querySelector('#home-content');
+  const dailyBox = root.querySelector('#home-daily');
+  let dailyRequest = 0;
+
+  function drawDaily(info, streak, entry, failed) {
+    const signedIn = Boolean(getUser());
+    let flameClass = 'streak-flame';
+    let title = 'Daily Challenge';
+    let hint = 'Sign in to start a streak.';
+    let buttonText = 'Play now';
+
+    if (signedIn && streak) {
+      if (streak.current > 0) {
+        flameClass = 'streak-flame streak-flame--lit';
+      }
+      title = streak.current + '-day streak';
+      hint = 'Play today to start a streak.';
+      if (streak.current > 0) {
+        hint = 'Play today to keep your streak alive.';
+      }
+      if (entry) {
+        hint = 'Done for today. Come back tomorrow to keep your streak.';
+        buttonText = 'See result';
+      }
+    } else if (signedIn && failed) {
+      hint = 'Open today\'s challenge and see the leaderboard.';
+      buttonText = 'Open';
+    }
+
+    dailyBox.innerHTML = `
+      <div class="streak card" style="flex-wrap: wrap;">
+        <span class="${flameClass}">${ICONS.flame}</span>
+        <div class="streak-text">
+          <strong class="streak-count">${escapeHtml(title)}</strong>
+          <span class="streak-best">Today: ${escapeHtml(info.name)} (${escapeHtml(info.category.name)})</span>
+          <span class="streak-hint">${escapeHtml(hint)}</span>
+        </div>
+        <button class="btn btn--primary" id="home-daily-btn" type="button" style="margin-left: auto;">
+          ${ICONS.calendar} ${buttonText}
+        </button>
+      </div>
+    `;
+    dailyBox.querySelector('#home-daily-btn').addEventListener('click', function () {
+      goTo('daily');
+    });
+  }
+
+  async function loadDaily() {
+    if (!isAuthReady()) {
+      return;
+    }
+    const info = getTodayInfo();
+    if (!getUser()) {
+      drawDaily(info, null, null, false);
+      return;
+    }
+
+    dailyRequest++;
+    const current = dailyRequest;
+    try {
+      const entry = await getEntry(info.id);
+      const streak = await getStreak();
+      if (active && current === dailyRequest) {
+        drawDaily(info, streak, entry, false);
+      }
+    } catch (error) {
+      if (active && current === dailyRequest) {
+        drawDaily(info, null, null, true);
+      }
+    }
+  }
 
   function getMainCategories() {
     const main = [];
@@ -294,10 +367,16 @@ export function render(root) {
     goTo('flashcards');
   }
 
+  const stopListening = onUserChange(function () {
+    loadDaily();
+  });
+
+  loadDaily();
   loadTopics();
 
   return function () {
     active = false;
+    stopListening();
     destroyDropdowns();
   };
 }
