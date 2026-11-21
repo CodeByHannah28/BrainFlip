@@ -3,6 +3,7 @@ import { goTo } from './nav.js';
 import { getState, resetQuiz, resetFlashcards } from './state.js';
 import { askToLeave } from './confirm.js';
 import { showToast } from './toast.js';
+import { setProtection } from './protect.js';
 import * as home from './screens/home.js';
 import * as flashcards from './screens/flashcards.js';
 import * as quiz from './screens/quiz.js';
@@ -10,8 +11,6 @@ import * as results from './screens/results.js';
 import * as decks from './screens/decks.js';
 import * as review from './screens/review.js';
 import * as progress from './screens/progress.js';
-import * as daily from './screens/daily.js';
-import * as leaderboard from './screens/leaderboard.js';
 
 const routes = {
   home: { title: 'Home', screen: home },
@@ -21,8 +20,6 @@ const routes = {
   decks: { title: 'Decks', screen: decks },
   review: { title: 'Review Answers', screen: review },
   progress: { title: 'Progress', screen: progress },
-  daily: { title: 'Daily Challenge', screen: daily },
-  leaderboard: { title: 'Leaderboard', screen: leaderboard },
 };
 
 const screenMain = document.getElementById('screen');
@@ -62,12 +59,7 @@ function getRouteName() {
 
 function getActiveSession() {
   const state = getState();
-  if (
-    currentRoute === 'quiz' &&
-    state.questions.length > 0 &&
-    state.quizStartedAt > 0 &&
-    !state.finished
-  ) {
+  if (currentRoute === 'quiz' && state.questions.length > 0 && !state.finished) {
     return 'quiz';
   }
   if (currentRoute === 'flashcards' && state.flashTotal > 0 && state.flashQueue.length > 0) {
@@ -90,6 +82,7 @@ function renderRoute() {
 
   document.title = route.title + ' | BrainFlip';
   pageBack.hidden = name === 'home';
+  setProtection(name === 'quiz' || name === 'flashcards');
 
   const links = document.querySelectorAll('[data-route]');
   for (let i = 0; i < links.length; i++) {
@@ -160,19 +153,13 @@ function handleHashChange() {
     if (!leave) {
       return;
     }
-    const wasDaily = getState().mode === 'daily';
     if (session === 'quiz') {
       resetQuiz();
     } else {
       resetFlashcards();
     }
     location.hash = targetHash || '#/home';
-    if (session === 'quiz' && wasDaily) {
-      showToast(
-        'Daily challenge ended',
-        'Your answers were not recorded, and today\'s attempt has been used. A new challenge arrives tomorrow.',
-      );
-    } else if (session === 'quiz') {
+    if (session === 'quiz') {
       showToast(
         'Quiz ended',
         'Your score and answers were not recorded. You can start a new quiz whenever you are ready.',

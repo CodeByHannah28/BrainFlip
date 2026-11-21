@@ -167,3 +167,49 @@
     animation: none;
   }
 }
+
+body.protected .screen {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+body.protected .screen img {
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+
+body.protected-blur .screen {
+  filter: blur(18px);
+  pointer-events: none;
+}
+
+body.protected-blur::after {
+  content: 'Come back to this page to continue';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 70;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lift);
+  font-weight: 700;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+@media print {
+  body.protected .screen {
+    display: none !important;
+  }
+
+  body.protected::before {
+    content: 'Printing is not allowed while you take a quiz or study flashcards.';
+    display: block;
+    padding: 24px;
+    font-size: 18px;
+  }
+}
